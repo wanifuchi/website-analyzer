@@ -787,10 +787,6 @@ async function performAnalysis(analysisId, url) {
     if (browser) {
       await browser.close();
     }
-    // エラー時もタイムアウトをクリア
-    clearTimeout(analysisTimeout);
-    clearTimeout(emergencyTimeout);
-    clearTimeout(safetyTimeout);
   }
 }
 
