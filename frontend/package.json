@@ -1,6 +1,6 @@
 {
   "name": "toneya-analysis-v1-frontend",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Toneya Analysis V1 - 高機能ウェブサイト分析ツールのフロントエンド",
   "private": true,
   "dependencies": {
