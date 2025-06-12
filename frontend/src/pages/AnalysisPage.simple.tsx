@@ -13,7 +13,8 @@ const AnalysisPage: React.FC = () => {
       if (!id) return;
       
       try {
-        const response = await fetch(`https://website-analyzer-production-c933.up.railway.app/api/analysis/${id}`);
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://website-analyzer-production-c933.up.railway.app';
+        const response = await fetch(`${API_BASE_URL}/api/analysis/${id}`);
         const data = await response.json();
         
         if (data.success) {
@@ -251,7 +252,8 @@ const AnalysisPage: React.FC = () => {
     
     setDownloading(format);
     try {
-      const response = await fetch(`https://website-analyzer-production-c933.up.railway.app/api/analysis/${analysisData.id}/${format}`);
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://website-analyzer-production-c933.up.railway.app';
+      const response = await fetch(`${API_BASE_URL}/api/analysis/${analysisData.id}/${format}`);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
