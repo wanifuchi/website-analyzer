@@ -1,7 +1,7 @@
 {
-  "name": "website-analyzer-backend",
+  "name": "toneya-analysis-v1-backend",
   "version": "1.0.0",
-  "description": "ウェブサイト分析ツールのバックエンドAPI",
+  "description": "Toneya Analysis V1 - 高機能ウェブサイト分析ツールのバックエンドAPI",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.simple.ts",

@@ -10,7 +10,7 @@
 ### Step 2: プロジェクトインポート
 1. Vercelダッシュボードで "Add New..." → "Project"
 2. "Import Git Repository" を選択
-3. **wanifuchi/website-analyzer** を選択
+3. **wanifuchi/toneya-analysis-v1** を選択
 4. "Import" をクリック
 
 ### Step 3: プロジェクト設定

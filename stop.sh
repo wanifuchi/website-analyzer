@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# ウェブサイト分析ツール - 停止スクリプト
+# Toneya Analysis V1 - 停止スクリプト
 
-echo "🛑 ウェブサイト分析ツールを停止しています..."
+echo "🛑 Toneya Analysis V1を停止しています..."
 
 # プロセスを停止
 pkill -f "node server.js" 2>/dev/null && echo "✅ バックエンドサーバーを停止しました" || echo "ℹ️  バックエンドサーバーは実行されていませんでした"

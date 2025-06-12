@@ -270,7 +270,7 @@ export class ReportService {
     for (let i = 0; i < pages.count; i++) {
       doc.switchToPage(i);
       doc.fontSize(10)
-         .text(`ウェブサイト分析ツール - ${i + 1} / ${pages.count}`, 
+         .text(`Toneya Analysis V1 - ${i + 1} / ${pages.count}`, 
                50, doc.page.height - 50, { align: 'center' });
     }
   }

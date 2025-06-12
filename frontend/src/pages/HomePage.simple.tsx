@@ -64,7 +64,7 @@ const HomePage: React.FC = () => {
         <div className="max-w-4xl mx-auto text-center">
           {/* ヘッダー */}
           <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            ウェブサイト分析ツール
+            Toneya Analysis V1
           </h1>
           <p className="text-xl text-gray-600 mb-12">
             URLを入力してサイトの健全性をチェック

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# ウェブサイト分析ツール - クイックスタート
+# Toneya Analysis V1 - クイックスタート
 
-echo "🚀 ウェブサイト分析ツールを起動しています..."
+echo "🚀 Toneya Analysis V1を起動しています..."
 
 # プロジェクトディレクトリに移動
 cd "$(dirname "$0")"
@@ -46,7 +46,7 @@ else
 fi
 
 echo ""
-echo "🎉 ウェブサイト分析ツールが起動しました！"
+echo "🎉 Toneya Analysis V1が起動しました！"
 echo ""
 echo "📱 フロントエンド: http://localhost:3000"
 echo "🔧 バックエンドAPI: http://localhost:3002"

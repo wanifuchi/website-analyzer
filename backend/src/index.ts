@@ -28,7 +28,7 @@ app.use('/api/analysis', analysisRoutes);
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
-    message: 'Website Analyzer API is running',
+    message: 'Toneya Analysis V1 API is running',
     timestamp: new Date().toISOString(),
     version: '1.0.0'
   });

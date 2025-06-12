@@ -1,4 +1,4 @@
-# Website Analyzer - デプロイメントガイド
+# Toneya Analysis V1 - デプロイメントガイド
 
 ## 構成
 
@@ -19,7 +19,7 @@
    cd /Users/noriaki/Desktop/claude_base/analytic/website-analyzer
    git init
    git add .
-   git commit -m "Initial commit: Website Analyzer"
+   git commit -m "Initial commit: Toneya Analysis V1"
    
    # GitHubでリポジトリ作成後
    git remote add origin https://github.com/YOUR_USERNAME/website-analyzer.git

@@ -9,7 +9,7 @@ const logFormat = winston.format.combine(
 export const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: logFormat,
-  defaultMeta: { service: 'website-analyzer' },
+  defaultMeta: { service: 'toneya-analysis-v1' },
   transports: [
     new winston.transports.File({ 
       filename: process.env.LOG_FILE_PATH || './logs/error.log', 

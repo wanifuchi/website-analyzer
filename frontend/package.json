@@ -1,7 +1,7 @@
 {
-  "name": "website-analyzer-frontend",
+  "name": "toneya-analysis-v1-frontend",
   "version": "1.0.1",
-  "description": "ウェブサイト分析ツールのフロントエンド",
+  "description": "Toneya Analysis V1 - 高機能ウェブサイト分析ツールのフロントエンド",
   "private": true,
   "dependencies": {
     "react": "^18.2.0",

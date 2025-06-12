@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: analyzer
       POSTGRES_PASSWORD: analyzer_pass
-      POSTGRES_DB: website_analyzer
+      POSTGRES_DB: toneya_analysis_v1
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -35,7 +35,7 @@ services:
       - "3001:3001"
     environment:
       NODE_ENV: development
-      DATABASE_URL: postgresql://analyzer:analyzer_pass@postgres:5432/website_analyzer
+      DATABASE_URL: postgresql://analyzer:analyzer_pass@postgres:5432/toneya_analysis_v1
       REDIS_URL: redis://redis:6379
       PORT: 3001
     depends_on:

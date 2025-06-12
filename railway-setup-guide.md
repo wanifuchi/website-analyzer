@@ -7,7 +7,7 @@
 2. "Login with GitHub" でログイン
 3. "New Project" をクリック
 4. "Deploy from GitHub repo" を選択
-5. "wanifuchi/website-analyzer" を選択
+5. "wanifuchi/toneya-analysis-v1" を選択
 
 ### Step 2: サービス設定（重要）
 

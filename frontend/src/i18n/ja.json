@@ -1,8 +1,8 @@
 {
   "app": {
-    "title": "ウェブサイト分析ツール",
+    "title": "Toneya Analysis V1",
     "subtitle": "URLを入力してサイトの健全性をチェック",
-    "description": "SEO、パフォーマンス、セキュリティ、アクセシビリティを総合的に分析"
+    "description": "SEO、パフォーマンス、セキュリティ、アクセシビリティを総合的に分析する高機能ツール"
   },
   "navigation": {
     "home": "ホーム",

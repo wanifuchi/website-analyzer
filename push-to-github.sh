@@ -4,7 +4,7 @@ echo "🚀 GitHub Repository Setup Script"
 echo "================================"
 echo ""
 echo "1. GitHubでリポジトリを作成してください: https://github.com/new"
-echo "   Repository name: website-analyzer"
+echo "   Repository name: toneya-analysis-v1"
 echo "   Visibility: Public"
 echo ""
 echo "2. 作成後、以下のコマンドを実行してください:"
@@ -16,7 +16,7 @@ read -p "GitHubユーザー名を入力してください: " GITHUB_USERNAME
 echo ""
 echo "実行するコマンド:"
 echo "=================="
-echo "git remote add origin https://github.com/$GITHUB_USERNAME/website-analyzer.git"
+echo "git remote add origin https://github.com/$GITHUB_USERNAME/toneya-analysis-v1.git"
 echo "git branch -M main"
 echo "git push -u origin main"
 echo ""
@@ -28,12 +28,12 @@ echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "🚀 リポジトリをpushしています..."
     
-    git remote add origin https://github.com/$GITHUB_USERNAME/website-analyzer.git
+    git remote add origin https://github.com/$GITHUB_USERNAME/toneya-analysis-v1.git
     git branch -M main
     git push -u origin main
     
     echo ""
-    echo "✅ 完了! リポジトリURL: https://github.com/$GITHUB_USERNAME/website-analyzer"
+    echo "✅ 完了! リポジトリURL: https://github.com/$GITHUB_USERNAME/toneya-analysis-v1"
     echo ""
     echo "次のステップ:"
     echo "=============="
@@ -43,7 +43,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "詳細はDEPLOYMENT.mdを参照してください。"
 else
     echo "手動で実行してください:"
-    echo "git remote add origin https://github.com/$GITHUB_USERNAME/website-analyzer.git"
+    echo "git remote add origin https://github.com/$GITHUB_USERNAME/toneya-analysis-v1.git"
     echo "git branch -M main"
     echo "git push -u origin main"
 fi

@@ -14,7 +14,7 @@ function App() {
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center">
                 <h1 className="text-xl font-bold text-gray-900">
-                  ウェブサイト分析ツール
+                  Toneya Analysis V1
                 </h1>
               </div>
               <div className="hidden md:flex space-x-8">
@@ -54,7 +54,7 @@ function App() {
         <footer className="bg-white border-t mt-auto">
           <div className="container mx-auto px-4 py-8">
             <div className="text-center text-gray-600">
-              <p>&copy; 2024 ウェブサイト分析ツール. All rights reserved.</p>
+              <p>&copy; 2024 Toneya Analysis V1. All rights reserved.</p>
               <p className="text-sm mt-2">
                 Claude Code で開発されました
               </p>
