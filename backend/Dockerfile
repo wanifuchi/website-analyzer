@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Puppeteer用の依存関係をインストール
 RUN apk add --no-cache \
