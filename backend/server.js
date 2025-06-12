@@ -92,6 +92,85 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Puppeteer診断エンドポイント
+app.get('/api/puppeteer-check', async (req, res) => {
+  try {
+    console.log('🔍 Starting Puppeteer diagnostic check...');
+    
+    const execPath = process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath();
+    
+    // 基本情報の収集
+    const diagnostics = {
+      timestamp: new Date().toISOString(),
+      environment: {
+        nodeVersion: process.version,
+        platform: process.platform,
+        arch: process.arch,
+        memory: process.memoryUsage(),
+        chromeExecutablePath: execPath,
+        environment: process.env.NODE_ENV || 'development'
+      },
+      puppeteer: {
+        version: require('puppeteer/package.json').version,
+        skipDownload: process.env.PUPPETEER_SKIP_CHROMIUM_DOWNLOAD,
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH
+      }
+    };
+
+    // Puppeteerの起動テスト
+    const startTime = Date.now();
+    try {
+      const browser = await Promise.race([
+        puppeteer.launch({
+          headless: 'new',
+          timeout: 0,
+          executablePath: execPath,
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--single-process'
+          ]
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Launch timeout')), 10000)
+        )
+      ]);
+
+      const launchTime = Date.now() - startTime;
+      const pages = await browser.pages();
+      
+      diagnostics.test = {
+        success: true,
+        launchTimeMs: launchTime,
+        pagesCount: pages.length,
+        message: 'Puppeteer launched successfully'
+      };
+
+      await browser.close();
+      
+    } catch (error) {
+      diagnostics.test = {
+        success: false,
+        error: error.message,
+        stack: error.stack,
+        message: 'Puppeteer launch failed'
+      };
+    }
+
+    res.json(diagnostics);
+    
+  } catch (error) {
+    console.error('🚨 Puppeteer diagnostic failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // 分析開始
 app.post('/api/analysis/start', async (req, res) => {
   const { url } = req.body;
@@ -417,21 +496,21 @@ async function performAnalysis(analysisId, url) {
     await saveAnalysisData(partialAnalysis);
   }, 20000); // 20秒でタイムアウト
   
-  // 最優先タイムアウト（10秒）
+  // 最優先タイムアウト（5秒） - Railway環境での即座な応答
   const emergencyTimeout = setTimeout(async () => {
     if (timeoutTriggered) return;
     timeoutTriggered = true;
-    console.log(`🚨 Emergency timeout triggered for ${analysisId}`);
+    console.log(`🚨 Emergency timeout triggered for ${analysisId} (5 seconds)`);
     const emergencyAnalysis = {
       id: analysisId,
       url: url,
       status: 'completed',
       startedAt: new Date().toISOString(),
       completedAt: new Date().toISOString(),
-      error: '10秒タイムアウトにより強制完了されました',
+      error: '5秒タイムアウトにより強制完了されました',
       results: {
         overall: { score: 20, grade: 'F' },
-        seo: { score: 10, issues: [{ type: 'error', message: '緊急タイムアウトのため分析を実行できませんでした' }] },
+        seo: { score: 10, issues: [{ type: 'error', message: 'Railway環境での緊急タイムアウト - Puppeteer初期化に問題があります' }] },
         performance: { score: 30, loadTime: null, firstContentfulPaint: null },
         security: { score: url.startsWith('https://') ? 50 : 5, httpsUsage: url.startsWith('https://'), issues: [] },
         accessibility: { score: 20, wcagLevel: 'A', violations: 1 },
@@ -439,7 +518,7 @@ async function performAnalysis(analysisId, url) {
       }
     };
     await saveAnalysisData(emergencyAnalysis);
-  }, 10000); // 10秒で緊急タイムアウト
+  }, 5000); // 5秒で緊急タイムアウト
   
   // 追加の安全タイムアウト（15秒）
   const safetyTimeout = setTimeout(async () => {
@@ -469,31 +548,36 @@ async function performAnalysis(analysisId, url) {
   try {
     console.log(`🚀 Initializing Puppeteer for ${analysisId}...`);
     
-    // Puppeteerの初期化に3秒のタイムアウトを設定（短縮）
+    // Puppeteerの初期化に8秒のタイムアウトを設定（Railway環境用）
     try {
+      // 実行可能パスのチェック
+      const execPath = process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath();
+      console.log(`📍 Using Chrome executable: ${execPath}`);
+      
       browser = await Promise.race([
         puppeteer.launch({
-          headless: true,
+          headless: 'new',
           timeout: 0,
-          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(),
+          executablePath: execPath,
           args: [
             '--no-sandbox', 
             '--disable-setuid-sandbox',
-            '--disable-blink-features=AutomationControlled',
             '--disable-dev-shm-usage',
             '--disable-gpu',
             '--no-first-run',
             '--no-zygote',
-            '--deterministic-fetch',
-            '--disable-features=IsolateOrigins',
-            '--disable-site-isolation-trials',
+            '--single-process',
             '--disable-extensions',
             '--disable-plugins',
-            '--disable-images'
+            '--disable-images',
+            '--disable-javascript', // JS無効化で高速化
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor',
+            '--max_old_space_size=256'
           ]
         }),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Puppeteer launch timeout')), 3000)
+          setTimeout(() => reject(new Error('Puppeteer launch timeout after 3 seconds')), 3000)
         )
       ]);
       
@@ -503,8 +587,15 @@ async function performAnalysis(analysisId, url) {
         throw new Error('Browser started but no pages available');
       }
       
+      console.log(`✅ Puppeteer initialized successfully with ${pages.length} pages`);
+      
     } catch (puppeteerError) {
-      console.error(`🚨 Puppeteer failed for ${analysisId}:`, puppeteerError.message);
+      console.error(`🚨 Puppeteer initialization failed for ${analysisId}:`);
+      console.error(`   Error: ${puppeteerError.message}`);
+      console.error(`   Stack: ${puppeteerError.stack}`);
+      console.error(`   Chrome Path: ${process.env.PUPPETEER_EXECUTABLE_PATH || 'default'}`);
+      console.error(`   Node Version: ${process.version}`);
+      console.error(`   Platform: ${process.platform}`);
       throw new Error(`Puppeteer初期化エラー: ${puppeteerError.message}`);
     }
     
