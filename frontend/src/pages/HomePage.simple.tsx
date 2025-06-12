@@ -95,7 +95,7 @@ const HomePage: React.FC = () => {
               )}
 
               {/* サンプルURL */}
-              <div className="text-sm text-gray-600">
+              {/* <div className="text-sm text-gray-600">
                 <p className="mb-2">サンプルURL:</p>
                 <div className="flex flex-wrap gap-2 justify-center">
                   {['google.com', 'github.com', 'stackoverflow.com', 'wikipedia.org'].map((sampleUrl) => (
@@ -109,7 +109,7 @@ const HomePage: React.FC = () => {
                     </button>
                   ))}
                 </div>
-              </div>
+              </div> */}
 
               <button
                 type="submit"

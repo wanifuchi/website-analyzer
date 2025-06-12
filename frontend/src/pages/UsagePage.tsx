@@ -54,11 +54,11 @@ const UsagePage: React.FC = () => {
         weeklyAnalyses: 67,
         monthlyAnalyses: 189,
         popularUrls: [
-          { url: 'https://google.com', count: 15, lastAnalyzed: '2025-06-12T13:30:00Z' },
-          { url: 'https://github.com', count: 12, lastAnalyzed: '2025-06-12T12:15:00Z' },
-          { url: 'https://stackoverflow.com', count: 8, lastAnalyzed: '2025-06-12T11:45:00Z' },
-          { url: 'https://wikipedia.org', count: 6, lastAnalyzed: '2025-06-12T10:20:00Z' },
-          { url: 'https://youtube.com', count: 5, lastAnalyzed: '2025-06-12T09:30:00Z' }
+          { url: 'https://example.com', count: 15, lastAnalyzed: '2025-06-12T13:30:00Z' },
+          { url: 'https://sample-site.org', count: 12, lastAnalyzed: '2025-06-12T12:15:00Z' },
+          { url: 'https://test-website.net', count: 8, lastAnalyzed: '2025-06-12T11:45:00Z' },
+          { url: 'https://demo-page.com', count: 6, lastAnalyzed: '2025-06-12T10:20:00Z' },
+          { url: 'https://sample.org', count: 5, lastAnalyzed: '2025-06-12T09:30:00Z' }
         ],
         dailyStats: [
           { date: '2025-06-06', count: 8 },
@@ -70,9 +70,9 @@ const UsagePage: React.FC = () => {
           { date: '2025-06-12', count: 12 }
         ],
         recentAnalyses: [
-          { id: 'analysis-123', url: 'https://google.com', score: 92, completedAt: '2025-06-12T13:30:00Z' },
-          { id: 'analysis-124', url: 'https://github.com', score: 88, completedAt: '2025-06-12T12:15:00Z' },
-          { id: 'analysis-125', url: 'https://stackoverflow.com', score: 85, completedAt: '2025-06-12T11:45:00Z' }
+          { id: 'analysis-123', url: 'https://example.com', score: 92, completedAt: '2025-06-12T13:30:00Z' },
+          { id: 'analysis-124', url: 'https://sample-site.org', score: 88, completedAt: '2025-06-12T12:15:00Z' },
+          { id: 'analysis-125', url: 'https://test-website.net', score: 85, completedAt: '2025-06-12T11:45:00Z' }
         ]
       };
       setStats(mockStats);
