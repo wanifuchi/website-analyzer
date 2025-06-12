@@ -1,0 +1,186 @@
+{
+  "app": {
+    "title": "ウェブサイト分析ツール",
+    "subtitle": "URLを入力してサイトの健全性をチェック",
+    "description": "SEO、パフォーマンス、セキュリティ、アクセシビリティを総合的に分析"
+  },
+  "navigation": {
+    "home": "ホーム",
+    "dashboard": "ダッシュボード",
+    "history": "履歴",
+    "about": "このツールについて"
+  },
+  "analysis": {
+    "inputLabel": "分析するウェブサイトのURL",
+    "inputPlaceholder": "https://example.com を入力",
+    "startButton": "分析開始",
+    "analyzing": "分析中...",
+    "completed": "分析完了",
+    "failed": "分析失敗",
+    "pending": "分析待機中",
+    "processing": "処理中",
+    "progress": "進捗状況",
+    "pagesAnalyzed": "分析済みページ数",
+    "totalPages": "総ページ数",
+    "errorCount": "エラー数",
+    "duration": "分析時間"
+  },
+  "options": {
+    "title": "詳細オプション",
+    "maxDepth": "最大クロール深度",
+    "maxPages": "最大ページ数",
+    "skipImages": "画像をスキップ",
+    "skipCSS": "CSSをスキップ",
+    "skipJS": "JavaScriptをスキップ",
+    "advanced": "詳細設定"
+  },
+  "results": {
+    "overall": {
+      "title": "総合評価",
+      "score": "スコア",
+      "grade": "ランク",
+      "summary": "サマリー"
+    },
+    "seo": {
+      "title": "SEO分析",
+      "score": "SEOスコア",
+      "issues": "検出された問題",
+      "suggestions": "改善提案",
+      "metaTags": "メタタグ",
+      "headings": "見出し構造",
+      "keywords": "キーワード",
+      "structuredData": "構造化データ"
+    },
+    "performance": {
+      "title": "パフォーマンス",
+      "score": "パフォーマンススコア",
+      "loadTime": "読み込み時間",
+      "fcp": "First Contentful Paint",
+      "lcp": "Largest Contentful Paint",
+      "tti": "Time to Interactive",
+      "tbt": "Total Blocking Time",
+      "resourceSizes": "リソースサイズ",
+      "suggestions": "最適化提案"
+    },
+    "security": {
+      "title": "セキュリティ",
+      "score": "セキュリティスコア",
+      "httpsUsage": "HTTPS使用",
+      "mixedContent": "Mixed Content",
+      "securityHeaders": "セキュリティヘッダー",
+      "vulnerabilities": "脆弱性",
+      "suggestions": "セキュリティ推奨事項"
+    },
+    "accessibility": {
+      "title": "アクセシビリティ",
+      "score": "アクセシビリティスコア",
+      "wcagLevel": "WCAGレベル",
+      "violations": "違反項目",
+      "suggestions": "改善推奨事項"
+    },
+    "mobile": {
+      "title": "モバイル対応",
+      "score": "モバイルスコア",
+      "viewport": "ビューポート設定",
+      "responsive": "レスポンシブデザイン",
+      "touchTargets": "タッチターゲットサイズ",
+      "textSize": "テキストサイズ",
+      "suggestions": "モバイル最適化提案"
+    },
+    "technology": {
+      "title": "技術スタック",
+      "frameworks": "フレームワーク",
+      "libraries": "ライブラリ",
+      "cms": "CMS",
+      "servers": "サーバー",
+      "analytics": "アナリティクス"
+    }
+  },
+  "charts": {
+    "scoreComparison": "スコア比較",
+    "performanceMetrics": "パフォーマンス指標",
+    "resourceBreakdown": "リソース内訳",
+    "issuesByCategory": "カテゴリ別問題数"
+  },
+  "actions": {
+    "viewDetails": "詳細を見る",
+    "downloadReport": "PDFレポートをダウンロード",
+    "exportCSV": "CSVエクスポート",
+    "reAnalyze": "再分析",
+    "delete": "削除",
+    "share": "共有",
+    "copyLink": "リンクをコピー",
+    "back": "戻る",
+    "close": "閉じる",
+    "save": "保存",
+    "cancel": "キャンセル"
+  },
+  "history": {
+    "title": "分析履歴",
+    "noHistory": "まだ分析履歴がありません",
+    "lastAnalyzed": "最終分析日時",
+    "status": "ステータス",
+    "actions": "アクション",
+    "filter": "フィルター",
+    "sortBy": "並び順"
+  },
+  "errors": {
+    "invalidUrl": "有効なURLを入力してください",
+    "networkError": "ネットワークエラーが発生しました",
+    "serverError": "サーバーエラーが発生しました",
+    "analysisNotFound": "分析結果が見つかりません",
+    "analysisInProgress": "分析が進行中です",
+    "rateLimitExceeded": "リクエスト数制限を超えました",
+    "unknown": "不明なエラーが発生しました"
+  },
+  "success": {
+    "analysisStarted": "分析を開始しました",
+    "reportDownloaded": "レポートをダウンロードしました",
+    "dataExported": "データをエクスポートしました",
+    "linkCopied": "リンクをコピーしました",
+    "analysisDeleted": "分析結果を削除しました"
+  },
+  "status": {
+    "online": "オンライン",
+    "offline": "オフライン",
+    "connecting": "接続中",
+    "error": "エラー"
+  },
+  "loading": {
+    "analyzing": "ウェブサイトを分析しています...",
+    "loadingResults": "結果を読み込んでいます...",
+    "generatingReport": "レポートを生成しています...",
+    "exportingData": "データをエクスポートしています..."
+  },
+  "tooltips": {
+    "seoScore": "SEOの最適化レベルを示します（100点満点）",
+    "performanceScore": "ページの読み込み速度とパフォーマンスを示します",
+    "securityScore": "ウェブサイトのセキュリティレベルを示します",
+    "accessibilityScore": "アクセシビリティの準拠レベルを示します",
+    "mobileScore": "モバイル端末での使いやすさを示します"
+  },
+  "grades": {
+    "A": "優秀",
+    "B": "良好",
+    "C": "普通",
+    "D": "要改善",
+    "F": "不良"
+  },
+  "severity": {
+    "critical": "重大",
+    "high": "高",
+    "serious": "深刻",
+    "medium": "中",
+    "moderate": "中程度",
+    "low": "低",
+    "minor": "軽微"
+  },
+  "units": {
+    "ms": "ミリ秒",
+    "s": "秒",
+    "kb": "KB",
+    "mb": "MB",
+    "bytes": "バイト",
+    "percent": "%"
+  }
+}
