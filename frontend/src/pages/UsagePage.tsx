@@ -119,7 +119,7 @@ const UsagePage: React.FC = () => {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">使用量ダッシュボード</h1>
-              <p className="text-gray-600 mt-1">ウェブサイト分析の利用状況</p>
+              <p className="text-gray-600 mt-1">Toneya Analysis V1の利用状況</p>
             </div>
             <Link to="/" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
               新しい分析

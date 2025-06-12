@@ -223,6 +223,53 @@ app.get('/api/analysis/:id', async (req, res) => {
   }
 });
 
+// 強制完了API（スタック解消用）
+app.post('/api/analysis/:id/force-complete', async (req, res) => {
+  try {
+    const analysisId = req.params.id;
+    const existingAnalysis = await getAnalysisData(analysisId);
+    
+    if (!existingAnalysis) {
+      return res.status(404).json({ success: false, error: '分析が見つかりません' });
+    }
+    
+    if (existingAnalysis.status === 'completed') {
+      return res.json({ success: true, message: '既に完了済みです', data: existingAnalysis });
+    }
+    
+    console.log(`🔧 Force completing stuck analysis: ${analysisId}`);
+    
+    const forceCompletedAnalysis = {
+      id: analysisId,
+      url: existingAnalysis.url,
+      status: 'completed',
+      startedAt: existingAnalysis.startedAt,
+      completedAt: new Date().toISOString(),
+      error: '処理時間超過のため強制完了されました',
+      results: {
+        overall: { score: 25, grade: 'F' },
+        seo: { score: 15, issues: [{ type: 'error', message: '処理時間超過のため詳細分析を実行できませんでした' }] },
+        performance: { score: 35, loadTime: null, firstContentfulPaint: null },
+        security: { score: existingAnalysis.url?.startsWith('https://') ? 60 : 10, httpsUsage: existingAnalysis.url?.startsWith('https://') || false, issues: [] },
+        accessibility: { score: 25, wcagLevel: 'A', violations: 1 },
+        mobile: { score: 20, isResponsive: false, hasViewportMeta: false }
+      }
+    };
+    
+    await saveAnalysisData(forceCompletedAnalysis);
+    
+    res.json({ 
+      success: true, 
+      message: '分析を強制完了しました', 
+      data: forceCompletedAnalysis 
+    });
+    
+  } catch (error) {
+    console.error('Force complete error:', error);
+    res.status(500).json({ success: false, error: 'サーバーエラーが発生しました' });
+  }
+});
+
 // PDFレポート生成
 app.get('/api/analysis/:id/pdf', async (req, res) => {
   try {
@@ -370,6 +417,30 @@ async function performAnalysis(analysisId, url) {
     await saveAnalysisData(partialAnalysis);
   }, 20000); // 20秒でタイムアウト
   
+  // 最優先タイムアウト（10秒）
+  const emergencyTimeout = setTimeout(async () => {
+    if (timeoutTriggered) return;
+    timeoutTriggered = true;
+    console.log(`🚨 Emergency timeout triggered for ${analysisId}`);
+    const emergencyAnalysis = {
+      id: analysisId,
+      url: url,
+      status: 'completed',
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      error: '10秒タイムアウトにより強制完了されました',
+      results: {
+        overall: { score: 20, grade: 'F' },
+        seo: { score: 10, issues: [{ type: 'error', message: '緊急タイムアウトのため分析を実行できませんでした' }] },
+        performance: { score: 30, loadTime: null, firstContentfulPaint: null },
+        security: { score: url.startsWith('https://') ? 50 : 5, httpsUsage: url.startsWith('https://'), issues: [] },
+        accessibility: { score: 20, wcagLevel: 'A', violations: 1 },
+        mobile: { score: 15, isResponsive: false, hasViewportMeta: false }
+      }
+    };
+    await saveAnalysisData(emergencyAnalysis);
+  }, 10000); // 10秒で緊急タイムアウト
+  
   // 追加の安全タイムアウト（15秒）
   const safetyTimeout = setTimeout(async () => {
     if (timeoutTriggered) return;
@@ -397,29 +468,45 @@ async function performAnalysis(analysisId, url) {
   let browser;
   try {
     console.log(`🚀 Initializing Puppeteer for ${analysisId}...`);
-    // Puppeteerの初期化に5秒のタイムアウトを設定
-    browser = await Promise.race([
-      puppeteer.launch({
-        headless: true,
-        timeout: 0,
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(),
-      args: [
-        '--no-sandbox', 
-        '--disable-setuid-sandbox',
-        '--disable-blink-features=AutomationControlled',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--no-first-run',
-        '--no-zygote',
-        '--deterministic-fetch',
-        '--disable-features=IsolateOrigins',
-        '--disable-site-isolation-trials'
-      ]
-      }),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Puppeteer launch timeout')), 5000)
-      )
-    ]);
+    
+    // Puppeteerの初期化に3秒のタイムアウトを設定（短縮）
+    try {
+      browser = await Promise.race([
+        puppeteer.launch({
+          headless: true,
+          timeout: 0,
+          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(),
+          args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox',
+            '--disable-blink-features=AutomationControlled',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--no-first-run',
+            '--no-zygote',
+            '--deterministic-fetch',
+            '--disable-features=IsolateOrigins',
+            '--disable-site-isolation-trials',
+            '--disable-extensions',
+            '--disable-plugins',
+            '--disable-images'
+          ]
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Puppeteer launch timeout')), 3000)
+        )
+      ]);
+      
+      // ブラウザが正常に起動したかチェック
+      const pages = await browser.pages();
+      if (pages.length === 0) {
+        throw new Error('Browser started but no pages available');
+      }
+      
+    } catch (puppeteerError) {
+      console.error(`🚨 Puppeteer failed for ${analysisId}:`, puppeteerError.message);
+      throw new Error(`Puppeteer初期化エラー: ${puppeteerError.message}`);
+    }
     
     console.log(`✅ Puppeteer launched successfully for ${analysisId}`);
     
@@ -557,6 +644,7 @@ async function performAnalysis(analysisId, url) {
     
     // タイムアウトをクリア
     clearTimeout(analysisTimeout);
+    clearTimeout(emergencyTimeout);
     clearTimeout(safetyTimeout);
     
   } catch (error) {
@@ -595,6 +683,7 @@ async function performAnalysis(analysisId, url) {
     }
     // エラー時もタイムアウトをクリア
     clearTimeout(analysisTimeout);
+    clearTimeout(emergencyTimeout);
     clearTimeout(safetyTimeout);
   }
 }
