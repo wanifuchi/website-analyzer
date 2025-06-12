@@ -27,7 +27,8 @@ const HomePage: React.FC = () => {
       // URLの妥当性チェック
       new URL(validatedUrl);
       
-      const response = await fetch('https://website-analyzer-production-c933.up.railway.app/api/analysis/start', {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://website-analyzer-production-c933.up.railway.app';
+      const response = await fetch(`${API_BASE_URL}/api/analysis/start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -172,7 +173,8 @@ const ConnectionStatus: React.FC = () => {
     const checkConnection = async () => {
       try {
         console.log('ヘルスチェック開始...');
-        const response = await fetch('https://website-analyzer-production-c933.up.railway.app/api/health');
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://website-analyzer-production-c933.up.railway.app';
+        const response = await fetch(`${API_BASE_URL}/api/health`);
         const data = await response.json();
         console.log('ヘルスチェック結果:', data);
         setStatus(data.success ? 'online' : 'offline');
