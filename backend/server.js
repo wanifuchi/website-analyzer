@@ -548,30 +548,64 @@ async function performAnalysis(analysisId, url) {
     
     // Puppeteerの初期化に8秒のタイムアウトを設定（Railway環境用）
     try {
-      // 実行可能パスのチェック
-      const execPath = process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath();
-      console.log(`📍 Using Chrome executable: ${execPath}`);
+      // Chrome実行可能パスの探索
+      const fs = require('fs');
+      const possiblePaths = [
+        process.env.PUPPETEER_EXECUTABLE_PATH,
+        '/usr/bin/google-chrome-stable',
+        '/usr/bin/google-chrome',
+        '/usr/bin/chromium-browser',
+        '/usr/bin/chromium',
+        puppeteer.executablePath()
+      ].filter(Boolean);
+      
+      let execPath = null;
+      for (const path of possiblePaths) {
+        try {
+          if (fs.existsSync(path)) {
+            execPath = path;
+            console.log(`✅ Found Chrome at: ${path}`);
+            break;
+          }
+        } catch (e) {
+          console.log(`❌ Chrome not found at: ${path}`);
+        }
+      }
+      
+      if (!execPath) {
+        console.error('🚨 Chrome executable not found in any expected location');
+        console.error('Tried paths:', possiblePaths);
+      }
       
       await updateProgress('initializing', 20);
       
+      const launchOptions = {
+        headless: 'new',
+        timeout: 0,
+        args: [
+          '--no-sandbox', 
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--no-first-run',
+          '--no-zygote',
+          '--disable-extensions',
+          '--disable-plugins',
+          '--disable-web-security',
+          '--disable-features=IsolateOrigins,site-per-process',
+          '--memory-pressure-off'
+        ]
+      };
+      
+      // execPathがある場合のみ設定
+      if (execPath) {
+        launchOptions.executablePath = execPath;
+      }
+      
+      console.log(`🚀 Launching Puppeteer with options:`, JSON.stringify(launchOptions, null, 2));
+      
       browser = await Promise.race([
-        puppeteer.launch({
-          headless: 'new',
-          timeout: 0,
-          executablePath: execPath,
-          args: [
-            '--no-sandbox', 
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-extensions',
-            '--disable-plugins',
-            '--memory-pressure-off',
-            '--max_old_space_size=512'
-          ]
-        }),
+        puppeteer.launch(launchOptions),
         new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Puppeteer launch timeout after 15 seconds')), 15000)
         )
