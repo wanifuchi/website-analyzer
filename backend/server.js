@@ -516,30 +516,7 @@ async function performAnalysis(analysisId, url) {
     }
   };
   
-  // 全体のタイムアウトを90秒に拡張（正確な分析のため）
-  let timeoutTriggered = false;
-  const analysisTimeout = setTimeout(async () => {
-    if (timeoutTriggered) return;
-    timeoutTriggered = true;
-    console.log(`⏱️ Analysis timeout for ${analysisId} after 90 seconds`);
-    const partialAnalysis = {
-      id: analysisId,
-      url: url,
-      status: 'completed',
-      startedAt: new Date().toISOString(),
-      completedAt: new Date().toISOString(),
-      error: 'タイムアウト: 90秒以内に完了しませんでした',
-      results: {
-        overall: { score: 40, grade: 'D' },
-        seo: { score: 30, issues: [{ type: 'warning', message: 'タイムアウトのため部分的な分析結果です' }] },
-        performance: { score: 50, loadTime: null, firstContentfulPaint: null },
-        security: { score: url.startsWith('https://') ? 70 : 20, httpsUsage: url.startsWith('https://'), issues: [] },
-        accessibility: { score: 40, wcagLevel: 'A', violations: 1 },
-        mobile: { score: 30, isResponsive: false, hasViewportMeta: false }
-      }
-    };
-    await saveAnalysisData(partialAnalysis);
-  }, 90000); // 90秒でタイムアウト
+  // タイムアウトは設定しない - 完全な分析を実行
   
   
   let browser;
@@ -604,12 +581,7 @@ async function performAnalysis(analysisId, url) {
       
       console.log(`🚀 Launching Puppeteer with options:`, JSON.stringify(launchOptions, null, 2));
       
-      browser = await Promise.race([
-        puppeteer.launch(launchOptions),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Puppeteer launch timeout after 15 seconds')), 15000)
-        )
-      ]);
+      browser = await puppeteer.launch(launchOptions);
       
       await updateProgress('initializing', 80);
       
@@ -635,9 +607,9 @@ async function performAnalysis(analysisId, url) {
     
     const page = await browser.newPage();
     
-    // ページ設定
-    await page.setDefaultNavigationTimeout(10000);
-    await page.setDefaultTimeout(10000);
+    // ページ設定 - 十分な時間を確保
+    await page.setDefaultNavigationTimeout(30000); // 30秒
+    await page.setDefaultTimeout(30000); // 30秒
     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
     
     // プロトコルエラー対策
@@ -657,9 +629,9 @@ async function performAnalysis(analysisId, url) {
     // ページアクセス（正確な分析のため十分な時間を確保）
     let response;
     const strategies = [
-      { waitUntil: 'domcontentloaded', timeout: 15000 },
-      { waitUntil: 'load', timeout: 20000 },
-      { waitUntil: 'networkidle2', timeout: 10000 }
+      { waitUntil: 'domcontentloaded', timeout: 30000 },
+      { waitUntil: 'load', timeout: 30000 },
+      { waitUntil: 'networkidle2', timeout: 20000 }
     ];
     
     let lastError;
@@ -780,11 +752,6 @@ async function performAnalysis(analysisId, url) {
     await saveAnalysisData(completedAnalysis);
     
     console.log(`✅ Analysis completed for ${url} (Score: ${overallScore})`);
-    
-    // タイムアウトをクリア
-    clearTimeout(analysisTimeout);
-    clearTimeout(emergencyTimeout);
-    clearTimeout(safetyTimeout);
     
   } catch (error) {
     if (timeoutTriggered) return; // タイムアウト後はエラー処理しない
