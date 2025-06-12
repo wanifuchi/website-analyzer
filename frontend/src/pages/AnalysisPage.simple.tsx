@@ -455,138 +455,45 @@ const AnalysisPage: React.FC = () => {
                     <div className="flex-1">
                       <h4 className="font-medium text-gray-900 mb-1">{issue.message}</h4>
                       
-                      {issue.impact && (
+                      {/* 優先度表示 */}
+                      {issue.priority && (
                         <div className="mb-2">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            issue.priority === 'high' ? 'bg-red-100 text-red-800' :
+                            issue.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            優先度: {issue.priority === 'high' ? '高' : issue.priority === 'medium' ? '中' : '低'}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* 影響説明 */}
+                      {issue.impact && (
+                        <div className="mb-3">
                           <span className="text-sm font-medium text-gray-700">影響:</span>
                           <p className="text-sm text-gray-600 mt-1">{issue.impact}</p>
                         </div>
                       )}
                       
-                      {issue.solution && (
-                        <div className="mb-2">
-                          <span className="text-sm font-medium text-gray-700">解決方法:</span>
-                          <p className="text-sm text-gray-600 mt-1 bg-gray-50 p-2 rounded code-block font-mono">
-                            {issue.solution}
-                          </p>
-                        </div>
-                      )}
-                      
+                      {/* 修正箇所 */}
                       {issue.location && (
-                        <div className="mb-2">
+                        <div className="mb-3">
                           <span className="text-sm font-medium text-gray-700">📍 修正箇所:</span>
-                          <div className="text-sm text-gray-600 mt-1 space-y-1">
-                            <div className="bg-blue-50 p-2 rounded">
-                              <span className="font-medium">セクション:</span> {issue.location.section}
-                            </div>
-                            <div className="bg-blue-50 p-2 rounded">
-                              <span className="font-medium">要素:</span> {issue.location.element}
-                            </div>
-                            <div className="bg-blue-50 p-2 rounded">
-                              <span className="font-medium">必要な作業:</span> {issue.location.action}
-                            </div>
-                            {issue.location.currentValue && (
-                              <div className="bg-yellow-50 p-2 rounded">
-                                <span className="font-medium">現在の値:</span> 
-                                <code className="block mt-1 text-xs bg-white p-1 rounded border">{issue.location.currentValue}</code>
-                              </div>
-                            )}
-                            {issue.location.code && (
-                              <div className="bg-green-50 p-2 rounded">
-                                <span className="font-medium">コード例:</span>
-                                <code className="block mt-1 text-xs bg-white p-1 rounded border font-mono">
-                                  {issue.location.code}
-                                </code>
-                              </div>
-                            )}
-                            {issue.location.details && Array.isArray(issue.location.details) && (
-                              <div className="bg-gray-50 p-2 rounded">
-                                <span className="font-medium">詳細情報:</span>
-                                <div className="mt-1 space-y-1">
-                                  {issue.location.details.map((detail: any, idx: number) => (
-                                    <div key={idx} className="text-xs bg-white p-1 rounded border">
-                                      <div><strong>位置 {detail.position}:</strong> {detail.text}</div>
-                                      <code className="block mt-1">{detail.code}</code>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            {issue.location.optimizations && Array.isArray(issue.location.optimizations) && (
-                              <div className="bg-green-50 p-2 rounded">
-                                <span className="font-medium">🚀 最適化手順:</span>
-                                <ul className="mt-1 list-disc list-inside text-xs space-y-1">
-                                  {issue.location.optimizations.map((opt: string, idx: number) => (
-                                    <li key={idx} className="text-green-700">{opt}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                            {issue.location.files && Array.isArray(issue.location.files) && (
-                              <div className="bg-purple-50 p-2 rounded">
-                                <span className="font-medium">📁 対象ファイル:</span>
-                                <div className="mt-1 flex flex-wrap gap-1">
-                                  {issue.location.files.map((file: string, idx: number) => (
-                                    <code key={idx} className="text-xs bg-white px-2 py-1 rounded border text-purple-700">
-                                      {file}
-                                    </code>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            {issue.location.wcagGuideline && (
-                              <div className="bg-indigo-50 p-2 rounded">
-                                <span className="font-medium">♿ WCAGガイドライン:</span>
-                                <p className="text-xs text-indigo-700 mt-1">{issue.location.wcagGuideline}</p>
-                              </div>
-                            )}
-                            {issue.location.serverConfigs && (
-                              <div className="bg-gray-50 p-2 rounded">
-                                <span className="font-medium">🖥️ サーバー設定例:</span>
-                                <div className="mt-1 space-y-2">
-                                  {Object.entries(issue.location.serverConfigs).map(([server, config]: [string, any]) => (
-                                    <div key={server} className="text-xs">
-                                      <div className="font-medium text-gray-700">{server}:</div>
-                                      <code className="block mt-1 bg-white p-1 rounded border font-mono text-gray-800">
-                                        {config}
-                                      </code>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            {issue.location.examples && Array.isArray(issue.location.examples) && (
-                              <div className="bg-yellow-50 p-2 rounded">
-                                <span className="font-medium">💡 実装例:</span>
-                                <ul className="mt-1 list-disc list-inside text-xs space-y-1">
-                                  {issue.location.examples.map((example: string, idx: number) => (
-                                    <li key={idx} className="text-yellow-700">{example}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                            {issue.location.bestPractices && Array.isArray(issue.location.bestPractices) && (
-                              <div className="bg-green-50 p-2 rounded">
-                                <span className="font-medium">⭐ ベストプラクティス:</span>
-                                <ul className="mt-1 list-disc list-inside text-xs space-y-1">
-                                  {issue.location.bestPractices.map((practice: string, idx: number) => (
-                                    <li key={idx} className="text-green-700">{practice}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
+                          <div className="bg-gray-100 px-3 py-2 rounded text-sm font-mono text-gray-800 mt-1">
+                            {issue.location}
                           </div>
                         </div>
                       )}
                       
-                      {issue.priority && (
-                        <span className={`inline-block px-2 py-1 text-xs font-medium rounded
-                          ${issue.priority === 'critical' ? 'bg-red-100 text-red-800' :
-                            issue.priority === 'high' ? 'bg-orange-100 text-orange-800' :
-                            issue.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
-                          {issue.priority === 'critical' ? '緊急' :
-                           issue.priority === 'high' ? '高' :
-                           issue.priority === 'medium' ? '中' : '低'}優先度
-                        </span>
+                      {/* 修正アドバイス */}
+                      {issue.recommendation && (
+                        <div className="mb-2">
+                          <span className="text-sm font-medium text-gray-700">🔧 修正アドバイス:</span>
+                          <div className="text-sm text-gray-700 bg-blue-50 p-3 rounded border mt-1">
+                            {issue.recommendation}
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
