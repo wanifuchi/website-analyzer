@@ -400,23 +400,20 @@ async function performAnalysis(analysisId, url) {
     // Puppeteerの初期化に5秒のタイムアウトを設定
     browser = await Promise.race([
       puppeteer.launch({
-        headless: 'new',
+        headless: true,
         timeout: 0,
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(),
       args: [
         '--no-sandbox', 
         '--disable-setuid-sandbox',
-        '--ignore-certificate-errors',
-        '--ignore-ssl-errors',
-        '--ignore-certificate-errors-spki-list',
-        '--disable-web-security',
-        '--allow-running-insecure-content',
-        '--disable-features=VizDisplayCompositor',
-        '--disable-gpu',
+        '--disable-blink-features=AutomationControlled',
         '--disable-dev-shm-usage',
-        '--memory-pressure-off',
-        '--max_old_space_size=4096',
+        '--disable-gpu',
+        '--no-first-run',
         '--no-zygote',
-        '--single-process'
+        '--deterministic-fetch',
+        '--disable-features=IsolateOrigins',
+        '--disable-site-isolation-trials'
       ]
       }),
       new Promise((_, reject) => 
@@ -425,8 +422,22 @@ async function performAnalysis(analysisId, url) {
     ]);
     
     console.log(`✅ Puppeteer launched successfully for ${analysisId}`);
+    
     const page = await browser.newPage();
+    
+    // ページ設定
+    await page.setDefaultNavigationTimeout(10000);
+    await page.setDefaultTimeout(10000);
     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    
+    // プロトコルエラー対策
+    page.on('error', error => {
+      console.error(`🚨 Page error for ${analysisId}:`, error.message);
+    });
+    
+    page.on('pageerror', error => {
+      console.error(`🚨 Page JS error for ${analysisId}:`, error.message);
+    });
     
     const startTime = Date.now();
     
