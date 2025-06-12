@@ -4,12 +4,12 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "env": {
-    "VITE_API_URL": "@vite_api_url"
+    "VITE_API_BASE_URL": "@vite_api_base_url"
   },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "$VITE_API_URL/api/$1"
+      "destination": "$VITE_API_BASE_URL/api/$1"
     }
   ],
   "headers": [
