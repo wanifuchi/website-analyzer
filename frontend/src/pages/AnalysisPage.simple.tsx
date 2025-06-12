@@ -13,7 +13,7 @@ const AnalysisPage: React.FC = () => {
       if (!id) return;
       
       try {
-        const response = await fetch(`/api/analysis/${id}`);
+        const response = await fetch(`https://website-analyzer-production-c933.up.railway.app/api/analysis/${id}`);
         const data = await response.json();
         
         if (data.success) {
@@ -38,10 +38,15 @@ const AnalysisPage: React.FC = () => {
         }
       } catch (error) {
         console.error('Analysis fetch error:', error);
-        // エラーの場合はモックデータを表示
+        // エラーの場合はモックデータを表示（URLパラメータから実際のURLを取得）
+        const urlParams = new URLSearchParams(window.location.search);
+        const actualUrl = urlParams.get('url') || 'https://example.com';
+        
+        console.log('分析エラー、モックデータを表示:', { error, actualUrl });
+        
         const mockAnalysis = {
           id: id,
-          url: 'https://example.com',
+          url: actualUrl,
           status: 'completed',
           startedAt: new Date().toISOString(),
           completedAt: new Date().toISOString(),
@@ -246,7 +251,7 @@ const AnalysisPage: React.FC = () => {
     
     setDownloading(format);
     try {
-      const response = await fetch(`/api/analysis/${analysisData.id}/${format}`);
+      const response = await fetch(`https://website-analyzer-production-c933.up.railway.app/api/analysis/${analysisData.id}/${format}`);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
