@@ -88,6 +88,11 @@ app.get('/api/health', (req, res) => {
     database: {
       connected: isDatabaseConnected,
       type: isDatabaseConnected ? 'PostgreSQL' : 'In-memory'
+    },
+    pageSpeedAPI: {
+      configured: !!process.env.GOOGLE_PAGESPEED_API_KEY,
+      keyLength: process.env.GOOGLE_PAGESPEED_API_KEY ? process.env.GOOGLE_PAGESPEED_API_KEY.length : 0,
+      endpoint: process.env.PAGESPEED_API_ENDPOINT || 'default'
     }
   });
 });
