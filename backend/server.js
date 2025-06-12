@@ -67,15 +67,9 @@ async function getAnalysisHistory(limit = 50, offset = 0, url = null) {
   };
 }
 
+// 緊急修正: CORS をすべて許可
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [
-        'https://website-analyzer-khaki.vercel.app',
-        'https://website-analyzer-git-main-flamevein0106-gmailcoms-projects.vercel.app',
-        'https://website-analyzer-drl0a8w3t-flamevein0106-gmailcoms-projects.vercel.app',
-        process.env.FRONTEND_URL
-      ].filter(Boolean)
-    : ['http://localhost:3000'],
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
