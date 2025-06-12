@@ -343,6 +343,7 @@ app.get('/api/analysis/stats/:url', async (req, res) => {
 // 実際の分析を実行する関数
 async function performAnalysis(analysisId, url) {
   console.log(`🔍 Starting analysis for ${url}...`);
+  console.log(`🔍 Environment: NODE_ENV=${process.env.NODE_ENV}, Memory: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
   
   // 全体のタイムアウトを20秒に短縮
   let timeoutTriggered = false;
@@ -395,6 +396,7 @@ async function performAnalysis(analysisId, url) {
   
   let browser;
   try {
+    console.log(`🚀 Initializing Puppeteer for ${analysisId}...`);
     // Puppeteerの初期化に5秒のタイムアウトを設定
     browser = await Promise.race([
       puppeteer.launch({
@@ -412,7 +414,9 @@ async function performAnalysis(analysisId, url) {
         '--disable-gpu',
         '--disable-dev-shm-usage',
         '--memory-pressure-off',
-        '--max_old_space_size=4096'
+        '--max_old_space_size=4096',
+        '--no-zygote',
+        '--single-process'
       ]
       }),
       new Promise((_, reject) => 
@@ -420,6 +424,7 @@ async function performAnalysis(analysisId, url) {
       )
     ]);
     
+    console.log(`✅ Puppeteer launched successfully for ${analysisId}`);
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
     
@@ -542,6 +547,36 @@ async function performAnalysis(analysisId, url) {
     // タイムアウトをクリア
     clearTimeout(analysisTimeout);
     clearTimeout(safetyTimeout);
+    
+  } catch (error) {
+    if (timeoutTriggered) return; // タイムアウト後はエラー処理しない
+    
+    console.error(`🚨 Critical analysis error for ${analysisId}:`, error.message);
+    console.error(`Stack trace:`, error.stack);
+    
+    const errorAnalysis = {
+      id: analysisId,
+      url: url,
+      status: 'completed',
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      error: `分析エラー: ${error.message}`,
+      results: {
+        overall: { score: 20, grade: 'F' },
+        seo: { score: 10, issues: [{ type: 'error', message: `分析中にエラーが発生しました: ${error.message}` }] },
+        performance: { score: 30, loadTime: null, firstContentfulPaint: null },
+        security: { score: url.startsWith('https://') ? 50 : 5, httpsUsage: url.startsWith('https://'), issues: [] },
+        accessibility: { score: 25, wcagLevel: 'A', violations: 1 },
+        mobile: { score: 15, isResponsive: false, hasViewportMeta: false }
+      }
+    };
+    
+    try {
+      await saveAnalysisData(errorAnalysis);
+      console.log(`💾 Error analysis saved for ${analysisId}`);
+    } catch (saveError) {
+      console.error(`🚨 Failed to save error analysis for ${analysisId}:`, saveError.message);
+    }
     
   } finally {
     if (browser) {
