@@ -25,11 +25,11 @@ RUN npm ci
 # ソースコードをコピー
 COPY . .
 
-# TypeScriptをビルド
-RUN npm run build
+# TypeScriptビルドはスキップ（server.jsを直接使用）
+# RUN npm run build
 
 # ポートを公開
-EXPOSE 3001
+EXPOSE 3002
 
 # アプリケーションを起動
 CMD ["npm", "start"]
