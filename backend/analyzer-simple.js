@@ -435,33 +435,113 @@ class SimpleWebAnalyzer {
     // HTTPS使用確認
     const isHttps = pageInfo.url.startsWith('https://');
     if (!isHttps) {
-      issues.push({ type: 'error', message: 'HTTPSが使用されていません' });
-      score -= 30;
+      issues.push({ 
+        type: 'error', 
+        message: 'HTTPSが使用されていません',
+        location: 'サイト全体のプロトコル設定',
+        impact: 'データ通信が暗号化されず、ユーザー情報が盗聴される危険性があります。Googleはランキング要因としてHTTPSを重視しています',
+        recommendation: 'SSL証明書を取得してHTTPSに移行してください。リダイレクト設定も必要です: HTTP → HTTPS',
+        priority: 'high'
+      });
+      score -= 40;
     }
 
     // mixedコンテンツチェック
     const httpResources = [];
+    const httpImages = [];
+    const httpScripts = [];
+    const httpStyles = [];
+    
     $('img, script, link').each((i, elem) => {
       const src = $(elem).attr('src') || $(elem).attr('href');
       if (src && src.startsWith('http://')) {
         httpResources.push(src);
+        if (elem.tagName === 'IMG') httpImages.push(src);
+        if (elem.tagName === 'SCRIPT') httpScripts.push(src);
+        if (elem.tagName === 'LINK') httpStyles.push(src);
       }
     });
 
     if (httpResources.length > 0 && isHttps) {
-      issues.push({ type: 'warning', message: `Mixed Content: ${httpResources.length}個のHTTPリソースがあります` });
-      score -= 15;
+      issues.push({ 
+        type: 'error', 
+        message: `Mixed Content: ${httpResources.length}個のHTTPリソースがあります`,
+        location: `HTTP リソース: ${httpResources.slice(0, 3).join(', ')}${httpResources.length > 3 ? '...' : ''}`,
+        impact: 'ブラウザが一部コンテンツをブロックし、ページが正しく表示されない可能性があります',
+        recommendation: `すべてのリソースをHTTPSに変更してください。画像:${httpImages.length}個、スクリプト:${httpScripts.length}個、CSS:${httpStyles.length}個`,
+        priority: 'high'
+      });
+      score -= 25;
     }
 
     // フォームのaction属性チェック
-    const unsecureForms = $('form').filter((i, form) => {
-      const action = $(form).attr('action');
-      return action && action.startsWith('http://');
-    }).length;
+    const forms = $('form');
+    const unsecureForms = [];
+    const formsWithoutAction = [];
+    
+    forms.each((i, form) => {
+      const $form = $(form);
+      const action = $form.attr('action');
+      const method = $form.attr('method');
+      
+      if (!action) {
+        formsWithoutAction.push(`フォーム${i + 1}`);
+      } else if (action.startsWith('http://')) {
+        unsecureForms.push(action);
+      }
+    });
 
-    if (unsecureForms > 0) {
-      issues.push({ type: 'error', message: `${unsecureForms}個のフォームが非セキュアです` });
-      score -= 20;
+    if (unsecureForms.length > 0) {
+      issues.push({ 
+        type: 'error', 
+        message: `${unsecureForms.length}個のフォームが非セキュアです`,
+        location: `フォーム送信先: ${unsecureForms.join(', ')}`,
+        impact: 'フォーム送信時にユーザーデータが暗号化されず、個人情報漏洩のリスクがあります',
+        recommendation: 'フォームのaction属性をHTTPSのURLに変更してください',
+        priority: 'high'
+      });
+      score -= 30;
+    }
+
+    // セキュリティヘッダーのチェック（簡易版では推測）
+    const hasSecurityHeaders = false; // 実際のレスポンスヘッダーは取得できないため
+    if (!hasSecurityHeaders) {
+      issues.push({
+        type: 'warning',
+        message: 'セキュリティヘッダーの設定が推奨されます',
+        location: 'サーバー設定',
+        impact: 'XSS攻撃、クリックジャッキング等の脆弱性に対する防御が不十分です',
+        recommendation: 'X-Frame-Options, X-XSS-Protection, Content-Security-Policy等のヘッダーを設定してください',
+        priority: 'medium'
+      });
+      score -= 10;
+    }
+
+    // 外部リンクのrel属性チェック
+    const externalLinks = $('a[href^="http"]').filter((i, link) => {
+      const href = $(link).attr('href');
+      return href && !href.includes(new URL(pageInfo.url).hostname);
+    });
+
+    const unsafeExternalLinks = [];
+    externalLinks.each((i, link) => {
+      const $link = $(link);
+      const rel = $link.attr('rel');
+      if (!rel || !rel.includes('noopener')) {
+        unsafeExternalLinks.push($link.attr('href'));
+      }
+    });
+
+    if (unsafeExternalLinks.length > 0) {
+      issues.push({
+        type: 'warning',
+        message: `${unsafeExternalLinks.length}個の外部リンクにrel="noopener"が設定されていません`,
+        location: `外部リンク: ${unsafeExternalLinks.slice(0, 3).join(', ')}${unsafeExternalLinks.length > 3 ? '...' : ''}`,
+        impact: 'target="_blank"の外部リンクでwindow.openerを通じた攻撃を受ける可能性があります',
+        recommendation: '外部リンクにrel="noopener noreferrer"を追加してください',
+        priority: 'medium'
+      });
+      score -= 10;
     }
 
     return {
@@ -471,7 +551,10 @@ class SimpleWebAnalyzer {
       details: {
         protocol: isHttps ? 'HTTPS' : 'HTTP',
         mixedContentCount: httpResources.length,
-        unsecureFormsCount: unsecureForms
+        unsecureFormsCount: unsecureForms.length,
+        totalForms: forms.length,
+        externalLinksCount: externalLinks.length,
+        unsafeExternalLinksCount: unsafeExternalLinks.length
       }
     };
   }
@@ -481,59 +564,261 @@ class SimpleWebAnalyzer {
     let score = 100;
     let violations = 0;
 
-    // alt属性のない画像
-    const imagesWithoutAlt = $('img').filter((i, img) => !$(img).attr('alt')).length;
-    if (imagesWithoutAlt > 0) {
-      issues.push({ type: 'error', message: `${imagesWithoutAlt}個の画像にalt属性がありません` });
-      score -= imagesWithoutAlt * 3;
-      violations += imagesWithoutAlt;
+    // alt属性のない画像の詳細分析
+    const images = $('img');
+    const imagesWithoutAlt = [];
+    const decorativeImages = [];
+    
+    images.each((i, img) => {
+      const $img = $(img);
+      const alt = $img.attr('alt');
+      const src = $img.attr('src') || 'unknown';
+      const id = $img.attr('id');
+      const className = $img.attr('class');
+      const title = $img.attr('title');
+      
+      // 具体的な要素識別情報を構築
+      let elementInfo = '<img';
+      if (id) elementInfo += ` id="${id}"`;
+      if (className) elementInfo += ` class="${className}"`;
+      elementInfo += ` src="${src}"`;
+      if (title) elementInfo += ` title="${title}"`;
+      
+      if (alt === undefined) {
+        elementInfo += '>'; // alt属性なし
+        imagesWithoutAlt.push({
+          src: src,
+          elementInfo: elementInfo,
+          identifier: id || className || src.split('/').pop() || `画像${i + 1}`
+        });
+      } else if (alt === '') {
+        elementInfo += ' alt="">'; // 装飾画像
+        decorativeImages.push({
+          src: src,
+          elementInfo: elementInfo,
+          identifier: id || className || src.split('/').pop() || `装飾画像${i + 1}`
+        });
+      }
+    });
+
+    if (imagesWithoutAlt.length > 0) {
+      const elementDetails = imagesWithoutAlt.slice(0, 3).map(item => item.elementInfo).join('\n');
+      
+      issues.push({ 
+        type: 'error', 
+        message: `${imagesWithoutAlt.length}個の画像にalt属性がありません`,
+        location: `具体的な要素:\n${elementDetails}${imagesWithoutAlt.length > 3 ? '\n...' : ''}`,
+        impact: 'スクリーンリーダーが画像内容を読み上げられず、視覚障害者がコンテンツを理解できません',
+        recommendation: `各画像に適切なalt属性を追加してください。例:\n${imagesWithoutAlt[0].elementInfo.replace('>', ' alt="画像の内容説明">')}\n\n装飾的な画像の場合は:\n${imagesWithoutAlt[0].elementInfo.replace('>', ' alt="">')}`,
+        priority: 'high'
+      });
+      score -= Math.min(imagesWithoutAlt.length * 5, 30);
+      violations += imagesWithoutAlt.length;
     }
 
-    // ラベルのないinput要素
-    const unlabeledInputs = $('input').filter((i, input) => {
+    // ラベルのないinput要素の詳細分析
+    const inputs = $('input');
+    const unlabeledInputs = [];
+    
+    inputs.each((i, input) => {
       const $input = $(input);
+      const type = $input.attr('type') || 'text';
       const id = $input.attr('id');
+      const name = $input.attr('name');
+      const className = $input.attr('class');
+      const placeholder = $input.attr('placeholder');
       const hasLabel = id && $(`label[for="${id}"]`).length > 0;
       const hasAriaLabel = $input.attr('aria-label') || $input.attr('aria-labelledby');
-      return !hasLabel && !hasAriaLabel;
-    }).length;
+      
+      if (!hasLabel && !hasAriaLabel && type !== 'hidden' && type !== 'submit' && type !== 'button') {
+        // 具体的な要素識別情報を構築
+        let elementInfo = `<input type="${type}"`;
+        if (id) elementInfo += ` id="${id}"`;
+        if (name) elementInfo += ` name="${name}"`;
+        if (className) elementInfo += ` class="${className}"`;
+        if (placeholder) elementInfo += ` placeholder="${placeholder}"`;
+        elementInfo += '>';
+        
+        unlabeledInputs.push({
+          type: type,
+          elementInfo: elementInfo,
+          identifier: id || name || className || `要素${i + 1}`
+        });
+      }
+    });
 
-    if (unlabeledInputs > 0) {
-      issues.push({ type: 'error', message: `${unlabeledInputs}個の入力要素にラベルがありません` });
-      score -= unlabeledInputs * 5;
-      violations += unlabeledInputs;
+    if (unlabeledInputs.length > 0) {
+      const identifiers = unlabeledInputs.map(item => item.identifier).slice(0, 3).join(', ');
+      const elementDetails = unlabeledInputs.slice(0, 2).map(item => item.elementInfo).join('\n');
+      
+      issues.push({ 
+        type: 'error', 
+        message: `${unlabeledInputs.length}個の入力要素にラベルがありません`,
+        location: `具体的な要素:\n${elementDetails}${unlabeledInputs.length > 2 ? '\n...' : ''}`,
+        impact: 'スクリーンリーダーユーザーが入力フィールドの目的を理解できません',
+        recommendation: `各入力要素に<label for="id">または aria-label属性を追加してください。例:\n<label for="${unlabeledInputs[0].identifier}">フィールド名</label>\n${unlabeledInputs[0].elementInfo.replace('>', ` aria-label="フィールド名">`)}`,
+        priority: 'high'
+      });
+      score -= Math.min(unlabeledInputs.length * 8, 40);
+      violations += unlabeledInputs.length;
     }
 
-    // 空のリンク
-    const emptyLinks = $('a').filter((i, link) => {
+    // 空のリンクの詳細分析
+    const links = $('a[href]');
+    const emptyLinks = [];
+    const ambiguousLinks = [];
+    
+    links.each((i, link) => {
       const $link = $(link);
-      return !$link.text().trim() && !$link.attr('aria-label') && !$link.find('img[alt]').length;
-    }).length;
+      const text = $link.text().trim();
+      const href = $link.attr('href');
+      const id = $link.attr('id');
+      const className = $link.attr('class');
+      const ariaLabel = $link.attr('aria-label');
+      const hasImageAlt = $link.find('img[alt]').length > 0;
+      
+      // 具体的な要素識別情報を構築
+      let elementInfo = `<a href="${href}"`;
+      if (id) elementInfo += ` id="${id}"`;
+      if (className) elementInfo += ` class="${className}"`;
+      elementInfo += '>';
+      
+      if (!text && !ariaLabel && !hasImageAlt) {
+        emptyLinks.push({
+          href: href,
+          elementInfo: elementInfo,
+          identifier: id || className || `リンク${i + 1}`
+        });
+      } else if (text && (text === 'こちら' || text === 'クリック' || text === 'more' || text === 'read more' || text === 'もっと見る' || text === '詳細')) {
+        ambiguousLinks.push({
+          text: text,
+          href: href,
+          elementInfo: elementInfo + text + '</a>',
+          identifier: id || className || `"${text}"リンク`
+        });
+      }
+    });
 
-    if (emptyLinks > 0) {
-      issues.push({ type: 'warning', message: `${emptyLinks}個の空のリンクがあります` });
-      score -= emptyLinks * 2;
-      violations += emptyLinks;
+    if (emptyLinks.length > 0) {
+      const elementDetails = emptyLinks.slice(0, 2).map(item => item.elementInfo + '(空のリンク)</a>').join('\n');
+      
+      issues.push({ 
+        type: 'error', 
+        message: `${emptyLinks.length}個の空のリンクがあります`,
+        location: `具体的な要素:\n${elementDetails}${emptyLinks.length > 2 ? '\n...' : ''}`,
+        impact: 'スクリーンリーダーユーザーがリンクの目的を理解できません',
+        recommendation: `リンクに説明的なテキストまたはaria-label属性を追加してください。例:\n${emptyLinks[0].elementInfo}商品詳細</a>\nまたは\n${emptyLinks[0].elementInfo.replace('>', ' aria-label="商品詳細ページへ">')}`,
+        priority: 'high'
+      });
+      score -= Math.min(emptyLinks.length * 5, 25);
+      violations += emptyLinks.length;
+    }
+
+    if (ambiguousLinks.length > 0) {
+      const elementDetails = ambiguousLinks.slice(0, 2).map(item => item.elementInfo).join('\n');
+      
+      issues.push({
+        type: 'warning',
+        message: `${ambiguousLinks.length}個のリンクテキストが曖昧です`,
+        location: `具体的な要素:\n${elementDetails}${ambiguousLinks.length > 2 ? '\n...' : ''}`,
+        impact: 'リンクの目的が不明確で、ユーザビリティが低下します',
+        recommendation: `具体的なリンクテキストに変更してください。例:\n「${ambiguousLinks[0].text}」→「商品詳細を見る」\n「${ambiguousLinks[0].text}」→「お問い合わせフォームへ」`,
+        priority: 'medium'
+      });
+      score -= Math.min(ambiguousLinks.length * 2, 15);
+      violations += ambiguousLinks.length;
     }
 
     // ページの言語設定
     const lang = $('html').attr('lang');
     if (!lang) {
-      issues.push({ type: 'warning', message: 'HTMLにlang属性が設定されていません' });
+      issues.push({ 
+        type: 'error', 
+        message: 'HTMLにlang属性が設定されていません',
+        location: '<html>タグ',
+        impact: 'スクリーンリーダーが適切な言語で読み上げられません',
+        recommendation: '<html lang="ja">のように言語コードを設定してください',
+        priority: 'high'
+      });
+      score -= 15;
+      violations += 1;
+    }
+
+    // 見出し構造のアクセシビリティチェック
+    const headings = $('h1, h2, h3, h4, h5, h6');
+    if (headings.length === 0) {
+      issues.push({
+        type: 'warning',
+        message: '見出し要素が見つかりません',
+        location: 'ページ全体',
+        impact: 'コンテンツの構造が不明確で、ナビゲーションが困難です',
+        recommendation: 'ページ内容に応じて適切な見出し(h1-h6)を設定してください',
+        priority: 'medium'
+      });
       score -= 10;
+      violations += 1;
+    }
+
+    // フォーカス可能要素のチェック
+    const focusableElements = $('a, button, input, select, textarea, [tabindex]');
+    const elementsWithNegativeTabindex = $('[tabindex="-1"]');
+    
+    if (elementsWithNegativeTabindex.length > focusableElements.length * 0.5) {
+      issues.push({
+        type: 'warning',
+        message: 'キーボードナビゲーションが制限されている可能性があります',
+        location: 'tabindex="-1"の要素が多数',
+        impact: 'キーボードユーザーが要素にアクセスできません',
+        recommendation: 'tabindex="-1"の使用を最小限に抑え、適切なフォーカス順序を確保してください',
+        priority: 'medium'
+      });
+      score -= 10;
+      violations += 1;
+    }
+
+    // 色に依存した情報提供のチェック（簡易）
+    const colorKeywords = ['red', 'green', 'blue', 'yellow', 'orange', 'purple', 'pink'];
+    const colorDependentText = [];
+    
+    $('*').each((i, elem) => {
+      const text = $(elem).text().toLowerCase();
+      colorKeywords.forEach(color => {
+        if (text.includes(`${color}の`) || text.includes(`${color}で`)) {
+          colorDependentText.push($(elem).text().substring(0, 50));
+        }
+      });
+    });
+
+    if (colorDependentText.length > 0) {
+      issues.push({
+        type: 'warning',
+        message: '色に依存した情報提供が検出されました',
+        location: `色を参照するテキスト: ${colorDependentText.slice(0, 2).join(', ')}...`,
+        impact: '色覚障害者や視覚障害者が情報を理解できない可能性があります',
+        recommendation: '色だけでなく、テキスト、アイコン、パターンなど複数の手段で情報を提供してください',
+        priority: 'medium'
+      });
+      score -= 5;
       violations += 1;
     }
 
     return {
       score: Math.max(score, 0),
-      wcagLevel: violations === 0 ? 'AAA' : violations < 5 ? 'AA' : 'A',
+      wcagLevel: violations === 0 ? 'AAA' : violations < 5 ? 'AA' : violations < 10 ? 'A' : '不適合',
       violations,
       issues,
       details: {
-        imagesWithoutAlt,
-        unlabeledInputs,
-        emptyLinks,
-        hasLangAttribute: !!lang
+        totalImages: images.length,
+        imagesWithoutAlt: imagesWithoutAlt.length,
+        decorativeImages: decorativeImages.length,
+        totalInputs: inputs.length,
+        unlabeledInputs: unlabeledInputs.length,
+        totalLinks: links.length,
+        emptyLinks: emptyLinks.length,
+        ambiguousLinks: ambiguousLinks.length,
+        hasLangAttribute: !!lang,
+        totalHeadings: headings.length,
+        focusableElements: focusableElements.length
       }
     };
   }
@@ -542,52 +827,266 @@ class SimpleWebAnalyzer {
     const issues = [];
     let score = 100;
 
-    // ビューポートメタタグ
+    // ビューポートメタタグの詳細分析
     const viewport = $('meta[name="viewport"]').attr('content');
     const hasViewportMeta = !!viewport;
     
     if (!hasViewportMeta) {
-      issues.push({ type: 'error', message: 'ビューポートメタタグが設定されていません' });
+      issues.push({ 
+        type: 'error', 
+        message: 'ビューポートメタタグが設定されていません',
+        location: '<head>セクション',
+        impact: 'モバイルデバイスでページが適切にスケールされず、ユーザビリティが大幅に低下します',
+        recommendation: '<meta name="viewport" content="width=device-width, initial-scale=1.0">をheadタグ内に追加してください',
+        priority: 'high'
+      });
       score -= 30;
-    } else if (!viewport.includes('width=device-width')) {
-      issues.push({ type: 'warning', message: 'ビューポートにwidth=device-widthが設定されていません' });
-      score -= 15;
+    } else {
+      // ビューポート設定の詳細チェック
+      if (!viewport.includes('width=device-width')) {
+        issues.push({ 
+          type: 'error', 
+          message: 'ビューポートにwidth=device-widthが設定されていません',
+          location: '<meta name="viewport">',
+          impact: 'モバイルデバイスでページ幅が適切に調整されません',
+          recommendation: `現在「${viewport}」ですが、width=device-widthを含めてください`,
+          priority: 'high'
+        });
+        score -= 20;
+      }
+      
+      if (!viewport.includes('initial-scale=1')) {
+        issues.push({
+          type: 'warning',
+          message: 'ビューポートに初期スケールが設定されていません',
+          location: '<meta name="viewport">',
+          impact: 'ページの初期表示倍率が不適切になる可能性があります',
+          recommendation: `「${viewport}」にinitial-scale=1.0を追加することを推奨します`,
+          priority: 'medium'
+        });
+        score -= 10;
+      }
+      
+      if (viewport.includes('user-scalable=no')) {
+        issues.push({
+          type: 'warning',
+          message: 'ユーザーのズーム操作が無効化されています',
+          location: '<meta name="viewport">',
+          impact: 'アクセシビリティが低下し、視覚障害者がページを拡大できません',
+          recommendation: 'user-scalable=noを削除し、ユーザーによるズームを許可してください',
+          priority: 'medium'
+        });
+        score -= 15;
+      }
+    }
+
+    // タッチターゲットサイズの分析
+    const clickableElements = $('a, button, input[type="button"], input[type="submit"], [onclick], [role="button"]');
+    let smallTouchTargets = 0;
+    const smallTargetElements = [];
+    
+    clickableElements.each((i, elem) => {
+      const $elem = $(elem);
+      const text = $elem.text().trim();
+      const id = $elem.attr('id');
+      const className = $elem.attr('class');
+      const href = $elem.attr('href');
+      const type = $elem.attr('type');
+      const tagName = elem.tagName.toLowerCase();
+      
+      // 44px未満と推定される小さなタッチターゲット
+      const isPotentiallySmall = text.length < 2 || (text.length < 5 && !$elem.find('img').length);
+      
+      if (isPotentiallySmall) {
+        smallTouchTargets++;
+        
+        // 具体的な要素識別情報を構築
+        let elementInfo = `<${tagName}`;
+        if (id) elementInfo += ` id="${id}"`;
+        if (className) elementInfo += ` class="${className}"`;
+        if (href) elementInfo += ` href="${href}"`;
+        if (type) elementInfo += ` type="${type}"`;
+        elementInfo += '>';
+        
+        if (text) {
+          elementInfo += text + `</${tagName}>`;
+        } else {
+          elementInfo += `(テキストなし)</${tagName}>`;
+        }
+        
+        smallTargetElements.push({
+          text: text || '(テキストなし)',
+          elementInfo: elementInfo,
+          identifier: id || className || text || `${tagName}${i + 1}`,
+          tagName: tagName
+        });
+      }
+    });
+    
+    if (smallTouchTargets > 0) {
+      const elementDetails = smallTargetElements.slice(0, 3).map(item => item.elementInfo).join('\n');
+      const identifiers = smallTargetElements.slice(0, 3).map(item => item.identifier).join(', ');
+      
+      issues.push({
+        type: 'warning',
+        message: `${smallTouchTargets}個の要素がタッチターゲットサイズ不足の可能性があります`,
+        location: `具体的な要素:\n${elementDetails}${smallTargetElements.length > 3 ? '\n...' : ''}`,
+        impact: 'モバイルユーザーが正確にタップできず、操作ミスが発生しやすくなります。特に高齢者や運動機能に制約のあるユーザーに影響があります',
+        recommendation: `各要素のサイズを最低44x44px以上に設定してください。CSSで以下のように指定:\n.${smallTargetElements[0].identifier.replace(/[^a-zA-Z0-9]/g, '')} {\n  min-height: 44px;\n  min-width: 44px;\n  padding: 12px;\n}`,
+        priority: 'medium'
+      });
+      score -= Math.min(smallTouchTargets * 3, 20);
     }
 
     // レスポンシブデザインの指標
-    const hasMediaQueries = /<style[^>]*>[\s\S]*@media[^{]*\{[\s\S]*?\}[\s\S]*<\/style>/.test(pageInfo.html) ||
-                           $('link[rel="stylesheet"]').length > 0; // CSSファイルがある場合は推定
+    const hasMediaQueries = /<style[^>]*>[\s\S]*@media[^{]*\{[\s\S]*?\}[\s\S]*<\/style>/.test($.html());
+    const responsiveFrameworks = $('link[href*="bootstrap"], link[href*="foundation"], link[href*="bulma"], script[src*="bootstrap"]').length;
+    
+    if (!hasMediaQueries && responsiveFrameworks === 0) {
+      issues.push({
+        type: 'error',
+        message: 'レスポンシブデザインが実装されていません',
+        location: 'CSS設定（メディアクエリまたはフレームワーク）',
+        impact: '異なる画面サイズのデバイスでレイアウトが崩れ、ユーザビリティが大幅に低下します',
+        recommendation: 'CSSメディアクエリまたはBootstrap等のレスポンシブフレームワークを導入してください',
+        priority: 'high'
+      });
+      score -= 25;
+    }
 
-    // タッチフレンドリーなボタンサイズ（推定）
-    const buttons = $('button, input[type="button"], input[type="submit"], .btn, .button').length;
-    const smallElements = $('*').filter((i, elem) => {
-      const $elem = $(elem);
-      return $elem.text().length > 0 && $elem.text().length < 3; // 短いテキストの要素
-    }).length;
+    // フォントサイズの分析
+    const textElements = $('p, div, span, h1, h2, h3, h4, h5, h6, li, td, th').filter((i, elem) => {
+      return $(elem).text().trim().length > 0;
+    });
+    
+    if (textElements.length === 0) {
+      issues.push({
+        type: 'warning',
+        message: 'テキストコンテンツが検出されませんでした',
+        location: 'ページ全体',
+        impact: 'フォントサイズの適切性を評価できません',
+        recommendation: 'テキストコンテンツがある場合は、16px以上のフォントサイズを推奨します',
+        priority: 'low'
+      });
+      score -= 5;
+    }
 
-    if (smallElements > buttons * 2) {
-      issues.push({ type: 'warning', message: 'タッチしにくい小さな要素が多数あります' });
+    // 画像の最適化チェック
+    const images = $('img');
+    const unoptimizedImages = [];
+    const imagesWithoutSrcset = [];
+    
+    images.each((i, img) => {
+      const $img = $(img);
+      const src = $img.attr('src');
+      const srcset = $img.attr('srcset');
+      
+      if (src) {
+        // 高解像度画像の検出
+        if (!srcset && src.match(/\.(jpg|jpeg|png|gif)$/i)) {
+          imagesWithoutSrcset.push(src);
+        }
+        
+        // レスポンシブ画像でない可能性
+        if (!srcset && !$img.attr('sizes')) {
+          unoptimizedImages.push(src);
+        }
+      }
+    });
+    
+    if (imagesWithoutSrcset.length > 3) {
+      issues.push({
+        type: 'info',
+        message: `${imagesWithoutSrcset.length}個の画像がレスポンシブ画像に最適化されていません`,
+        location: `画像ファイル: ${imagesWithoutSrcset.slice(0, 3).join(', ')}${imagesWithoutSrcset.length > 3 ? '...' : ''}`,
+        impact: 'モバイルデバイスで不要に大きな画像が読み込まれ、通信量と読み込み時間が増加します',
+        recommendation: 'srcset属性とsizes属性を使用して、デバイスに応じた適切なサイズの画像を配信してください',
+        priority: 'medium'
+      });
       score -= 10;
     }
 
-    // モバイル用のCSSやJSライブラリの検出
-    const mobileLibraries = $('script, link').filter((i, elem) => {
-      const src = $(elem).attr('src') || $(elem).attr('href') || '';
-      return /mobile|responsive|bootstrap|foundation/i.test(src);
-    }).length;
+    // ホリゾンタルスクロールの可能性チェック
+    const wideElements = $('table, pre, code').filter((i, elem) => {
+      const $elem = $(elem);
+      return $elem.text().length > 100 || $elem.find('tr td').length > 5;
+    });
+    
+    if (wideElements.length > 0) {
+      issues.push({
+        type: 'warning',
+        message: `${wideElements.length}個の要素で横スクロールが発生する可能性があります`,
+        location: 'テーブル、コードブロック等の横幅の大きな要素',
+        impact: 'モバイルデバイスで横スクロールが必要になり、閲覧性が低下します',
+        recommendation: 'テーブルにoverflow-x: autoを設定するか、レスポンシブテーブルライブラリを使用してください',
+        priority: 'medium'
+      });
+      score -= 10;
+    }
 
-    const isResponsive = hasViewportMeta && (hasMediaQueries || mobileLibraries > 0);
+    // モバイル特有の機能チェック
+    const hasTelLinks = $('a[href^="tel:"]').length;
+    const hasEmailLinks = $('a[href^="mailto:"]').length;
+    const hasMapLinks = $('a[href*="maps.google"], a[href*="goo.gl/maps"]').length;
+    
+    let mobileFeatureScore = 0;
+    if (hasTelLinks > 0) mobileFeatureScore += 5;
+    if (hasEmailLinks > 0) mobileFeatureScore += 3;
+    if (hasMapLinks > 0) mobileFeatureScore += 2;
+    
+    if (mobileFeatureScore === 0) {
+      issues.push({
+        type: 'info',
+        message: 'モバイル向けの便利機能が検出されませんでした',
+        location: 'ページ全体のリンク設定',
+        impact: 'ユーザビリティ向上の機会を逃している可能性があります',
+        recommendation: '電話番号はtel:、メールアドレスはmailto:リンクとして設定することを推奨します',
+        priority: 'low'
+      });
+    } else {
+      score += Math.min(mobileFeatureScore, 10); // 最大10点のボーナス
+    }
+
+    // PWA関連の基本チェック
+    const hasManifest = $('link[rel="manifest"]').length > 0;
+    const hasServiceWorker = $.html().includes('serviceWorker') || $.html().includes('service-worker');
+    
+    if (!hasManifest && !hasServiceWorker) {
+      issues.push({
+        type: 'info',
+        message: 'PWA（Progressive Web App）機能が実装されていません',
+        location: 'HTML head セクション',
+        impact: 'モバイルアプリのような体験を提供できず、ユーザーエンゲージメントの向上機会を逃しています',
+        recommendation: 'Web App ManifestとService Workerを実装してPWA化を検討してください',
+        priority: 'low'
+      });
+    }
+
+    const isResponsive = hasViewportMeta && (hasMediaQueries || responsiveFrameworks > 0);
 
     return {
-      score: Math.max(score, 0),
+      score: Math.max(Math.min(score, 100), 0),
       isResponsive,
       hasViewportMeta,
       issues,
       details: {
         viewport: viewport || '未設定',
         hasMediaQueries,
-        mobileLibrariesCount: mobileLibraries,
-        buttonsCount: buttons
+        responsiveFrameworks,
+        clickableElements: clickableElements.length,
+        smallTouchTargets,
+        totalImages: images.length,
+        imagesWithoutSrcset: imagesWithoutSrcset.length,
+        wideElements: wideElements.length,
+        mobileFeatures: {
+          telLinks: hasTelLinks,
+          emailLinks: hasEmailLinks,
+          mapLinks: hasMapLinks
+        },
+        pwaFeatures: {
+          hasManifest,
+          hasServiceWorker
+        }
       }
     };
   }
