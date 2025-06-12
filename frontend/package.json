@@ -1,6 +1,6 @@
 {
   "name": "website-analyzer-frontend",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "ウェブサイト分析ツールのフロントエンド",
   "private": true,
   "dependencies": {
