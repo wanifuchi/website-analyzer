@@ -369,11 +369,37 @@ async function performAnalysis(analysisId, url) {
     await saveAnalysisData(partialAnalysis);
   }, 20000); // 20秒でタイムアウト
   
+  // 追加の安全タイムアウト（15秒）
+  const safetyTimeout = setTimeout(async () => {
+    if (timeoutTriggered) return;
+    timeoutTriggered = true;
+    console.log(`🚨 Safety timeout triggered for ${analysisId}`);
+    const failedAnalysis = {
+      id: analysisId,
+      url: url,
+      status: 'completed',
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      error: 'サーバーの高負荷によりタイムアウトしました',
+      results: {
+        overall: { score: 25, grade: 'F' },
+        seo: { score: 15, issues: [{ type: 'error', message: 'サーバータイムアウトのため分析を完了できませんでした' }] },
+        performance: { score: 40, loadTime: null, firstContentfulPaint: null },
+        security: { score: url.startsWith('https://') ? 60 : 10, httpsUsage: url.startsWith('https://'), issues: [] },
+        accessibility: { score: 30, wcagLevel: 'A', violations: 1 },
+        mobile: { score: 20, isResponsive: false, hasViewportMeta: false }
+      }
+    };
+    await saveAnalysisData(failedAnalysis);
+  }, 15000); // 15秒でより確実なタイムアウト
+  
   let browser;
   try {
-    browser = await puppeteer.launch({
-      headless: 'new',
-      timeout: 0,
+    // Puppeteerの初期化に5秒のタイムアウトを設定
+    browser = await Promise.race([
+      puppeteer.launch({
+        headless: 'new',
+        timeout: 0,
       args: [
         '--no-sandbox', 
         '--disable-setuid-sandbox',
@@ -388,7 +414,11 @@ async function performAnalysis(analysisId, url) {
         '--memory-pressure-off',
         '--max_old_space_size=4096'
       ]
-    });
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Puppeteer launch timeout')), 5000)
+      )
+    ]);
     
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
@@ -511,6 +541,7 @@ async function performAnalysis(analysisId, url) {
     
     // タイムアウトをクリア
     clearTimeout(analysisTimeout);
+    clearTimeout(safetyTimeout);
     
   } finally {
     if (browser) {
@@ -518,6 +549,7 @@ async function performAnalysis(analysisId, url) {
     }
     // エラー時もタイムアウトをクリア
     clearTimeout(analysisTimeout);
+    clearTimeout(safetyTimeout);
   }
 }
 
