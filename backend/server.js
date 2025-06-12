@@ -348,6 +348,7 @@ async function performAnalysis(analysisId, url) {
   try {
     browser = await puppeteer.launch({
       headless: 'new',
+      timeout: 0,
       args: [
         '--no-sandbox', 
         '--disable-setuid-sandbox',
@@ -356,7 +357,11 @@ async function performAnalysis(analysisId, url) {
         '--ignore-certificate-errors-spki-list',
         '--disable-web-security',
         '--allow-running-insecure-content',
-        '--disable-features=VizDisplayCompositor'
+        '--disable-features=VizDisplayCompositor',
+        '--disable-gpu',
+        '--disable-dev-shm-usage',
+        '--memory-pressure-off',
+        '--max_old_space_size=4096'
       ]
     });
     
@@ -365,39 +370,32 @@ async function performAnalysis(analysisId, url) {
     
     const startTime = Date.now();
     
-    // ページアクセス（複数の戦略でリトライ）
+    // ページアクセス（段階的により寛容な設定でリトライ）
     let response;
-    try {
-      response = await page.goto(url, { 
-        waitUntil: 'networkidle0',
-        timeout: 30000
-      });
-    } catch (error) {
-      console.log(`⚠️ First attempt failed: ${error.message}`);
-      
-      if (error.message.includes('timeout')) {
-        console.log(`⚠️ Timeout with networkidle0, trying domcontentloaded for ${url}`);
-        // より寛容な条件でリトライ
-        response = await page.goto(url, { 
-          waitUntil: 'domcontentloaded',
-          timeout: 20000
-        });
-      } else if (error.message.includes('ERR_CERT') || error.message.includes('SSL') || error.message.includes('certificate')) {
-        console.log(`⚠️ SSL/Certificate error, trying with reduced security for ${url}`);
-        // SSL証明書エラーの場合、より寛容な設定でリトライ
-        response = await page.goto(url, { 
-          waitUntil: 'domcontentloaded',
-          timeout: 15000
-        });
-      } else if (error.message.includes('net::ERR_CERT_VERIFIER_CHANGED')) {
-        console.log(`⚠️ Certificate verifier changed, trying alternative approach for ${url}`);
-        // 証明書検証器変更エラーの場合
-        response = await page.goto(url, { 
-          waitUntil: 'load',
-          timeout: 15000
-        });
-      } else {
-        throw error;
+    const strategies = [
+      { waitUntil: 'domcontentloaded', timeout: 10000 },
+      { waitUntil: 'load', timeout: 8000 },
+      { waitUntil: 'networkidle2', timeout: 6000 }
+    ];
+    
+    let lastError;
+    for (let i = 0; i < strategies.length; i++) {
+      const strategy = strategies[i];
+      try {
+        console.log(`📡 Attempt ${i + 1}: Trying with ${strategy.waitUntil}, timeout: ${strategy.timeout}ms`);
+        response = await page.goto(url, strategy);
+        console.log(`✅ Success with strategy ${i + 1}`);
+        break;
+      } catch (error) {
+        lastError = error;
+        console.log(`❌ Strategy ${i + 1} failed: ${error.message}`);
+        
+        if (i === strategies.length - 1) {
+          // 最後の戦略も失敗した場合
+          console.log(`🚨 All strategies failed for ${url}, proceeding with minimal data`);
+          // 最低限のレスポンスオブジェクトを作成
+          response = { status: () => 0, url: () => url };
+        }
       }
     }
     
