@@ -542,8 +542,20 @@ const AnalysisPage: React.FC = () => {
               {analysisData.results.performance.score}点
             </div>
             <div className="text-sm text-gray-600">
-              <p>読み込み時間: {analysisData.results.performance.loadTime}秒</p>
-              <p>FCP: {analysisData.results.performance.firstContentfulPaint}秒</p>
+              {analysisData.results.performance.pageSpeedScore ? (
+                <>
+                  <p>📱 モバイル: {analysisData.results.performance.pageSpeedScore.mobile}点</p>
+                  <p>🖥️ デスクトップ: {analysisData.results.performance.pageSpeedScore.desktop}点</p>
+                  {analysisData.results.performance.coreWebVitals && (
+                    <p>LCP: {analysisData.results.performance.coreWebVitals.lcp.displayValue}</p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p>読み込み時間: {analysisData.results.performance.loadTime}秒</p>
+                  <p>FCP: {analysisData.results.performance.firstContentfulPaint}秒</p>
+                </>
+              )}
               <button 
                 onClick={() => handleCategoryExpand('performance')}
                 className="mt-2 text-blue-600 hover:text-blue-800 text-xs"
@@ -686,6 +698,78 @@ const AnalysisPage: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Core Web Vitals */}
+        {analysisData.results.pageSpeed && analysisData.results.pageSpeed.mobile.coreWebVitals && (
+          <div className="mt-8 bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center">
+              <span className="mr-2">🚀</span>
+              Core Web Vitals（リアルタイム測定）
+            </h3>
+            <div className="grid md:grid-cols-3 gap-4">
+              {/* LCP */}
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-gray-900">LCP</h4>
+                  <span className={`w-3 h-3 rounded-full ${
+                    analysisData.results.pageSpeed.mobile.coreWebVitals.lcp.score >= 0.75 ? 'bg-green-500' :
+                    analysisData.results.pageSpeed.mobile.coreWebVitals.lcp.score >= 0.5 ? 'bg-yellow-500' : 'bg-red-500'
+                  }`}></span>
+                </div>
+                <p className="text-2xl font-bold text-blue-700">
+                  {analysisData.results.pageSpeed.mobile.coreWebVitals.lcp.displayValue}
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  {analysisData.results.pageSpeed.mobile.coreWebVitals.lcp.description}
+                </p>
+              </div>
+
+              {/* FID/TBT */}
+              <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-gray-900">TBT</h4>
+                  <span className={`w-3 h-3 rounded-full ${
+                    analysisData.results.pageSpeed.mobile.coreWebVitals.tbt.score >= 0.75 ? 'bg-green-500' :
+                    analysisData.results.pageSpeed.mobile.coreWebVitals.tbt.score >= 0.5 ? 'bg-yellow-500' : 'bg-red-500'
+                  }`}></span>
+                </div>
+                <p className="text-2xl font-bold text-green-700">
+                  {analysisData.results.pageSpeed.mobile.coreWebVitals.tbt.displayValue}
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  {analysisData.results.pageSpeed.mobile.coreWebVitals.tbt.description}
+                </p>
+              </div>
+
+              {/* CLS */}
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-gray-900">CLS</h4>
+                  <span className={`w-3 h-3 rounded-full ${
+                    analysisData.results.pageSpeed.mobile.coreWebVitals.cls.score >= 0.75 ? 'bg-green-500' :
+                    analysisData.results.pageSpeed.mobile.coreWebVitals.cls.score >= 0.5 ? 'bg-yellow-500' : 'bg-red-500'
+                  }`}></span>
+                </div>
+                <p className="text-2xl font-bold text-purple-700">
+                  {analysisData.results.pageSpeed.mobile.coreWebVitals.cls.displayValue}
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  {analysisData.results.pageSpeed.mobile.coreWebVitals.cls.description}
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-4 flex items-center justify-between text-sm">
+              <span className="text-gray-600">
+                📊 データ取得: Google PageSpeed Insights API
+              </span>
+              <span className="text-gray-500">
+                ✅ モバイル: {analysisData.results.pageSpeed.mobile.scores.performance}点 | 
+                🖥️ デスクトップ: {analysisData.results.pageSpeed.desktop.scores.performance}点
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* 優先順位付き改修提案 */}
         {analysisData.results.prioritizedRecommendations && (

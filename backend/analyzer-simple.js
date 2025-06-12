@@ -1,10 +1,12 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
+const PageSpeedInsightsClient = require('./pagespeed-client');
 
 // 軽量で確実なウェブサイト分析エンジン
 class SimpleWebAnalyzer {
   constructor() {
     this.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    this.pageSpeedClient = new PageSpeedInsightsClient();
   }
 
   async analyzeWebsite(url) {
@@ -30,31 +32,57 @@ class SimpleWebAnalyzer {
         responseTime: Date.now() - startTime
       };
 
-      // 分析を実行
-      const seoResults = this.analyzeSEO($, pageInfo);
-      const performanceResults = this.analyzePerformance($, pageInfo);
-      const securityResults = this.analyzeSecurity($, pageInfo);
-      const accessibilityResults = this.analyzeAccessibility($, pageInfo);
-      const mobileResults = this.analyzeMobile($, pageInfo);
+      // 並列で分析を実行
+      const [
+        seoResults,
+        performanceResults,
+        securityResults,
+        accessibilityResults,
+        mobileResults,
+        pageSpeedResults
+      ] = await Promise.allSettled([
+        Promise.resolve(this.analyzeSEO($, pageInfo)),
+        Promise.resolve(this.analyzePerformance($, pageInfo)),
+        Promise.resolve(this.analyzeSecurity($, pageInfo)),
+        Promise.resolve(this.analyzeAccessibility($, pageInfo)),
+        Promise.resolve(this.analyzeMobile($, pageInfo)),
+        this.analyzeWithPageSpeed(pageInfo.url)
+      ]);
 
-      // 総合スコア計算
+      // 結果を取得（エラーの場合はデフォルト値）
+      const seo = seoResults.status === 'fulfilled' ? seoResults.value : this.getDefaultSeoResults();
+      const performance = performanceResults.status === 'fulfilled' ? performanceResults.value : this.getDefaultPerformanceResults();
+      const security = securityResults.status === 'fulfilled' ? securityResults.value : this.getDefaultSecurityResults();
+      const accessibility = accessibilityResults.status === 'fulfilled' ? accessibilityResults.value : this.getDefaultAccessibilityResults();
+      const mobile = mobileResults.status === 'fulfilled' ? mobileResults.value : this.getDefaultMobileResults();
+      const pageSpeed = pageSpeedResults.status === 'fulfilled' ? pageSpeedResults.value : null;
+
+      // PageSpeed Insights データでパフォーマンス分析を強化
+      const enhancedPerformance = this.enhancePerformanceWithPageSpeed(performance, pageSpeed);
+
+      // 総合スコア計算（PageSpeed データを考慮）
+      const finalPerformanceScore = pageSpeed && pageSpeed.mobile.scores.performance !== null 
+        ? pageSpeed.mobile.scores.performance 
+        : enhancedPerformance.score;
+
       const overallScore = Math.round((
-        seoResults.score + 
-        performanceResults.score + 
-        securityResults.score + 
-        accessibilityResults.score + 
-        mobileResults.score
+        seo.score + 
+        finalPerformanceScore + 
+        security.score + 
+        accessibility.score + 
+        mobile.score
       ) / 5);
 
       const grade = this.getGrade(overallScore);
 
       return {
         overall: { score: overallScore, grade },
-        seo: seoResults,
-        performance: performanceResults,
-        security: securityResults,
-        accessibility: accessibilityResults,
-        mobile: mobileResults,
+        seo: seo,
+        performance: enhancedPerformance,
+        security: security,
+        accessibility: accessibility,
+        mobile: mobile,
+        pageSpeed: pageSpeed,
         pageInfo
       };
 
@@ -1097,6 +1125,151 @@ class SimpleWebAnalyzer {
     if (score >= 70) return 'C';
     if (score >= 60) return 'D';
     return 'F';
+  }
+
+  /**
+   * PageSpeed Insights APIを使用した分析
+   * @param {string} url - 分析対象URL
+   * @returns {Object} PageSpeed分析結果
+   */
+  async analyzeWithPageSpeed(url) {
+    if (!this.pageSpeedClient.isApiAvailable()) {
+      console.log('📋 PageSpeed Insights API が利用できません');
+      return null;
+    }
+
+    try {
+      console.log('🚀 PageSpeed Insights 分析開始...');
+      const results = await this.pageSpeedClient.analyzeBothStrategies(url);
+      console.log('✅ PageSpeed Insights 分析完了');
+      return results;
+    } catch (error) {
+      console.error('❌ PageSpeed Insights 分析エラー:', error.message);
+      return null;
+    }
+  }
+
+  /**
+   * PageSpeed データでパフォーマンス分析を強化
+   * @param {Object} basePerformance - 基本パフォーマンス分析結果
+   * @param {Object} pageSpeedData - PageSpeed Insights データ
+   * @returns {Object} 強化されたパフォーマンス分析結果
+   */
+  enhancePerformanceWithPageSpeed(basePerformance, pageSpeedData) {
+    if (!pageSpeedData) {
+      return basePerformance;
+    }
+
+    const mobileData = pageSpeedData.mobile;
+    const desktopData = pageSpeedData.desktop;
+
+    // PageSpeed データから課題を抽出
+    const pageSpeedIssues = this.extractPageSpeedIssues(mobileData, desktopData);
+
+    // 強化されたパフォーマンス結果
+    return {
+      ...basePerformance,
+      score: mobileData.scores.performance || basePerformance.score,
+      pageSpeedScore: {
+        mobile: mobileData.scores.performance,
+        desktop: desktopData.scores.performance
+      },
+      coreWebVitals: mobileData.coreWebVitals,
+      loadTime: mobileData.coreWebVitals.fcp.value ? mobileData.coreWebVitals.fcp.value / 1000 : basePerformance.loadTime,
+      firstContentfulPaint: mobileData.coreWebVitals.fcp.value ? mobileData.coreWebVitals.fcp.value / 1000 : null,
+      issues: [...basePerformance.issues, ...pageSpeedIssues],
+      opportunities: mobileData.opportunities || [],
+      diagnostics: mobileData.diagnostics || [],
+      details: {
+        ...basePerformance.details,
+        pageSpeedAvailable: true,
+        mobileStrategy: mobileData.strategy,
+        desktopStrategy: desktopData.strategy,
+        lighthouseVersion: mobileData.lighthouseVersion
+      }
+    };
+  }
+
+  /**
+   * PageSpeed データから課題を抽出
+   * @param {Object} mobileData - モバイル分析データ
+   * @param {Object} desktopData - デスクトップ分析データ
+   * @returns {Array} 課題リスト
+   */
+  extractPageSpeedIssues(mobileData, desktopData) {
+    const issues = [];
+
+    // Core Web Vitals の問題をチェック
+    if (mobileData.coreWebVitals.lcp.score !== null && mobileData.coreWebVitals.lcp.score < 0.5) {
+      issues.push({
+        type: 'error',
+        message: `Largest Contentful Paint が遅いです (${mobileData.coreWebVitals.lcp.displayValue})`,
+        location: 'ページ全体の読み込み性能',
+        impact: '主要コンテンツの表示が遅く、ユーザーの離脱率が高くなります',
+        recommendation: '画像の最適化、不要なJavaScriptの削除、サーバー応答時間の改善を行ってください',
+        priority: 'high'
+      });
+    }
+
+    if (mobileData.coreWebVitals.cls.score !== null && mobileData.coreWebVitals.cls.score < 0.5) {
+      issues.push({
+        type: 'warning',
+        message: `Cumulative Layout Shift が大きいです (${mobileData.coreWebVitals.cls.displayValue})`,
+        location: 'ページレイアウトの安定性',
+        impact: 'ページ読み込み時にレイアウトが崩れ、ユーザビリティが低下します',
+        recommendation: '画像のwidth/height属性の設定、フォントの最適化、動的コンテンツの事前確保を行ってください',
+        priority: 'medium'
+      });
+    }
+
+    if (mobileData.coreWebVitals.fcp.score !== null && mobileData.coreWebVitals.fcp.score < 0.5) {
+      issues.push({
+        type: 'warning',
+        message: `First Contentful Paint が遅いです (${mobileData.coreWebVitals.fcp.displayValue})`,
+        location: '初期コンテンツの表示性能',
+        impact: '最初のコンテンツ表示が遅く、ユーザーが待機時間を長く感じます',
+        recommendation: 'クリティカルなCSS・JavaScriptの最適化、サーバー応答時間の改善を行ってください',
+        priority: 'medium'
+      });
+    }
+
+    // パフォーマンススコアの差をチェック
+    if (mobileData.scores.performance && desktopData.scores.performance) {
+      const scoreDiff = desktopData.scores.performance - mobileData.scores.performance;
+      if (scoreDiff > 20) {
+        issues.push({
+          type: 'warning',
+          message: `モバイルとデスクトップのパフォーマンス差が大きいです (${scoreDiff}点差)`,
+          location: 'モバイル最適化',
+          impact: 'モバイルユーザーの体験が大幅に劣化しています',
+          recommendation: 'モバイル向けの画像最適化、JavaScriptの最適化、レスポンシブ対応の改善を行ってください',
+          priority: 'high'
+        });
+      }
+    }
+
+    return issues;
+  }
+
+  // デフォルト結果を返すメソッド群
+  getDefaultSeoResults() {
+    return { score: 50, issues: [], details: {} };
+  }
+
+  getDefaultPerformanceResults() {
+    return { score: 50, issues: [], details: {}, loadTime: null };
+  }
+
+  getDefaultSecurityResults() {
+    return { score: 50, issues: [], details: {} };
+  }
+
+  getDefaultAccessibilityResults() {
+    return { score: 50, issues: [], details: {}, violations: 0 };
+  }
+
+  getDefaultMobileResults() {
+    return { score: 50, issues: [], details: {}, isResponsive: false };
   }
 }
 
