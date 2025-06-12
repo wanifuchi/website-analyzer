@@ -467,23 +467,21 @@ app.get('/api/analysis/stats/:url', async (req, res) => {
 });
 
 // 実際の分析を実行する関数
+const SimpleWebAnalyzer = require('./analyzer-simple');
+
 async function performAnalysis(analysisId, url) {
-  console.log(`🔍 Starting analysis for ${url}...`);
+  console.log(`🔍 Starting simple analysis for ${url}...`);
   console.log(`🔍 Environment: NODE_ENV=${process.env.NODE_ENV}, Memory: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
   
-  // 分析進捗を管理
+  // 簡易分析の進捗管理
   let analysisProgress = {
     currentStep: 'initializing',
     progress: 0,
-    estimatedTimeRemaining: 60,
+    estimatedTimeRemaining: 15,
     steps: [
-      { name: 'initializing', label: 'ブラウザを初期化中...', duration: 5 },
-      { name: 'loading', label: 'ページを読み込み中...', duration: 10 },
-      { name: 'seo', label: 'SEO分析中...', duration: 15 },
-      { name: 'performance', label: 'パフォーマンス分析中...', duration: 10 },
-      { name: 'security', label: 'セキュリティ分析中...', duration: 8 },
-      { name: 'accessibility', label: 'アクセシビリティ分析中...', duration: 7 },
-      { name: 'mobile', label: 'モバイル対応分析中...', duration: 5 }
+      { name: 'initializing', label: '分析を初期化中...', duration: 2 },
+      { name: 'loading', label: 'ページを読み込み中...', duration: 3 },
+      { name: 'analyzing', label: '総合分析中...', duration: 10 }
     ]
   };
   
@@ -516,228 +514,34 @@ async function performAnalysis(analysisId, url) {
     }
   };
   
-  // タイムアウトは設定しない - 完全な分析を実行
+  const analyzer = new SimpleWebAnalyzer();
   
-  
-  let browser;
   try {
-    console.log(`🚀 Initializing Puppeteer for ${analysisId}...`);
-    
-    // Puppeteerの初期化に8秒のタイムアウトを設定（Railway環境用）
-    try {
-      // Chrome実行可能パスの探索
-      const fs = require('fs');
-      const possiblePaths = [
-        process.env.PUPPETEER_EXECUTABLE_PATH,
-        '/usr/bin/google-chrome-stable',
-        '/usr/bin/google-chrome',
-        '/usr/bin/chromium-browser',
-        '/usr/bin/chromium',
-        puppeteer.executablePath()
-      ].filter(Boolean);
-      
-      let execPath = null;
-      for (const path of possiblePaths) {
-        try {
-          if (fs.existsSync(path)) {
-            execPath = path;
-            console.log(`✅ Found Chrome at: ${path}`);
-            break;
-          }
-        } catch (e) {
-          console.log(`❌ Chrome not found at: ${path}`);
-        }
-      }
-      
-      if (!execPath) {
-        console.error('🚨 Chrome executable not found in any expected location');
-        console.error('Tried paths:', possiblePaths);
-      }
-      
-      await updateProgress('initializing', 20);
-      
-      const launchOptions = {
-        headless: 'new',
-        timeout: 0,
-        args: [
-          '--no-sandbox', 
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--no-first-run',
-          '--no-zygote',
-          '--disable-extensions',
-          '--disable-plugins',
-          '--disable-web-security',
-          '--disable-features=IsolateOrigins,site-per-process',
-          '--memory-pressure-off'
-        ]
-      };
-      
-      // execPathがある場合のみ設定
-      if (execPath) {
-        launchOptions.executablePath = execPath;
-      }
-      
-      console.log(`🚀 Launching Puppeteer with options:`, JSON.stringify(launchOptions, null, 2));
-      
-      browser = await puppeteer.launch(launchOptions);
-      
-      await updateProgress('initializing', 80);
-      
-      // ブラウザが正常に起動したかチェック
-      const pages = await browser.pages();
-      if (pages.length === 0) {
-        throw new Error('Browser started but no pages available');
-      }
-      
-      console.log(`✅ Puppeteer initialized successfully with ${pages.length} pages`);
-      
-    } catch (puppeteerError) {
-      console.error(`🚨 Puppeteer initialization failed for ${analysisId}:`);
-      console.error(`   Error: ${puppeteerError.message}`);
-      console.error(`   Stack: ${puppeteerError.stack}`);
-      console.error(`   Chrome Path: ${process.env.PUPPETEER_EXECUTABLE_PATH || 'default'}`);
-      console.error(`   Node Version: ${process.version}`);
-      console.error(`   Platform: ${process.platform}`);
-      throw new Error(`Puppeteer初期化エラー: ${puppeteerError.message}`);
-    }
-    
-    console.log(`✅ Puppeteer launched successfully for ${analysisId}`);
-    
-    const page = await browser.newPage();
-    
-    // ページ設定 - 十分な時間を確保
-    await page.setDefaultNavigationTimeout(30000); // 30秒
-    await page.setDefaultTimeout(30000); // 30秒
-    await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-    
-    // プロトコルエラー対策
-    page.on('error', error => {
-      console.error(`🚨 Page error for ${analysisId}:`, error.message);
-    });
-    
-    page.on('pageerror', error => {
-      console.error(`🚨 Page JS error for ${analysisId}:`, error.message);
-    });
-    
-    const startTime = Date.now();
+    await updateProgress('initializing', 50);
+    console.log(`🚀 Starting simple web analysis for ${analysisId}...`);
     
     await updateProgress('initializing', 100);
-    await updateProgress('loading', 10);
+    await updateProgress('loading', 0);
+    await updateProgress('loading', 50);
     
-    // ページアクセス（正確な分析のため十分な時間を確保）
-    let response;
-    const strategies = [
-      { waitUntil: 'domcontentloaded', timeout: 30000 },
-      { waitUntil: 'load', timeout: 30000 },
-      { waitUntil: 'networkidle2', timeout: 20000 }
-    ];
-    
-    let lastError;
-    for (let i = 0; i < strategies.length; i++) {
-      const strategy = strategies[i];
-      try {
-        console.log(`📡 Attempt ${i + 1}: Trying with ${strategy.waitUntil}, timeout: ${strategy.timeout}ms`);
-        await updateProgress('loading', 30 + (i * 20));
-        response = await page.goto(url, strategy);
-        console.log(`✅ Success with strategy ${i + 1}`);
-        break;
-      } catch (error) {
-        lastError = error;
-        console.log(`❌ Strategy ${i + 1} failed: ${error.message}`);
-        
-        if (i === strategies.length - 1) {
-          // 最後の戦略も失敗した場合
-          console.log(`🚨 All strategies failed for ${url}, proceeding with minimal data`);
-          // 最低限のレスポンスオブジェクトを作成
-          response = { status: () => 0, url: () => url };
-        }
-      }
-    }
+    // 簡易分析エンジンで分析実行
+    const results = await analyzer.analyzeWebsite(url);
     
     await updateProgress('loading', 100);
+    await updateProgress('analyzing', 0);
     
-    const loadTime = (Date.now() - startTime) / 1000;
-    
-    // SEO分析
-    await updateProgress('seo', 0);
-    const seoResults = await analyzeSEO(page);
-    await updateProgress('seo', 100);
-    
-    // パフォーマンス分析
-    await updateProgress('performance', 0);
-    const performanceResults = await analyzePerformance(page, loadTime);
-    await updateProgress('performance', 100);
-    
-    // セキュリティ分析
-    await updateProgress('security', 0);
-    const securityResults = await analyzeSecurity(page, response);
-    await updateProgress('security', 100);
-    
-    // アクセシビリティ分析
-    await updateProgress('accessibility', 0);
-    const accessibilityResults = await analyzeAccessibility(page);
-    await updateProgress('accessibility', 100);
-    
-    // モバイル対応分析
-    await updateProgress('mobile', 0);
-    const mobileResults = await analyzeMobile(page);
-    
-    // コンテンツ品質分析
-    const contentQualityResults = await analyzeContentQuality(page);
-    await updateProgress('mobile', 100);
-    
-    // 高度なパフォーマンス分析
-    const advancedPerformanceResults = await analyzeAdvancedPerformance(page);
-    
-    // 高度なセキュリティ分析
-    const advancedSecurityResults = await analyzeAdvancedSecurity(page, response);
-    
-    // ビジネス指標分析
-    const businessMetricsResults = await analyzeBusinessMetrics(page, response);
-    
-    // 総合スコア計算（9カテゴリの平均）
-    const overallScore = Math.round((
-      seoResults.score + 
-      performanceResults.score + 
-      securityResults.score + 
-      accessibilityResults.score + 
-      mobileResults.score +
-      contentQualityResults.score +
-      advancedPerformanceResults.score +
-      advancedSecurityResults.score +
-      businessMetricsResults.score
-    ) / 9);
-    
-    const grade = getGrade(overallScore);
-    
-    // 優先順位付き改修提案を生成
-    const prioritizedRecommendations = generatePrioritizedRecommendations({
-      seo: seoResults,
-      performance: performanceResults,
-      security: securityResults,
-      accessibility: accessibilityResults,
-      mobile: mobileResults,
-      contentQuality: contentQualityResults,
-      advancedPerformance: advancedPerformanceResults,
-      advancedSecurity: advancedSecurityResults,
-      businessMetrics: businessMetricsResults
+    console.log(`✅ Analysis results for ${url}:`, {
+      overall: results.overall,
+      scores: {
+        seo: results.seo.score,
+        performance: results.performance.score,
+        security: results.security.score,
+        accessibility: results.accessibility.score,
+        mobile: results.mobile.score
+      }
     });
     
-    const results = {
-      overall: { score: overallScore, grade },
-      seo: seoResults,
-      performance: performanceResults,
-      security: securityResults,
-      accessibility: accessibilityResults,
-      mobile: mobileResults,
-      contentQuality: contentQualityResults,
-      advancedPerformance: advancedPerformanceResults,
-      advancedSecurity: advancedSecurityResults,
-      businessMetrics: businessMetricsResults,
-      prioritizedRecommendations: prioritizedRecommendations
-    };
+    await updateProgress('analyzing', 100);
     
     // 分析完了
     const completedAnalysis = {
@@ -751,13 +555,10 @@ async function performAnalysis(analysisId, url) {
     
     await saveAnalysisData(completedAnalysis);
     
-    console.log(`✅ Analysis completed for ${url} (Score: ${overallScore})`);
+    console.log(`✅ Analysis completed for ${url} (Score: ${results.overall.score})`);
     
   } catch (error) {
-    if (timeoutTriggered) return; // タイムアウト後はエラー処理しない
-    
-    console.error(`🚨 Critical analysis error for ${analysisId}:`, error.message);
-    console.error(`Stack trace:`, error.stack);
+    console.error(`🚨 Analysis error for ${analysisId}:`, error.message);
     
     const errorAnalysis = {
       id: analysisId,
@@ -776,17 +577,7 @@ async function performAnalysis(analysisId, url) {
       }
     };
     
-    try {
-      await saveAnalysisData(errorAnalysis);
-      console.log(`💾 Error analysis saved for ${analysisId}`);
-    } catch (saveError) {
-      console.error(`🚨 Failed to save error analysis for ${analysisId}:`, saveError.message);
-    }
-    
-  } finally {
-    if (browser) {
-      await browser.close();
-    }
+    await saveAnalysisData(errorAnalysis);
   }
 }
 
