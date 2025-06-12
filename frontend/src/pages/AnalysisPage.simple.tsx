@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 
+interface AnalysisProgress {
+  currentStep: string;
+  progress: number;
+  estimatedTimeRemaining: number;
+  currentStepLabel: string;
+}
+
 const AnalysisPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [status, setStatus] = useState<'loading' | 'completed' | 'error'>('loading');
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [downloading, setDownloading] = useState<string | null>(null);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [progress, setProgress] = useState<AnalysisProgress | null>(null);
 
   useEffect(() => {
     const fetchAnalysisResult = async () => {
@@ -20,18 +28,26 @@ const AnalysisPage: React.FC = () => {
         if (data.success) {
           setAnalysisData(data.data);
           
+          // 進捗情報を更新
+          if (data.data.progress) {
+            setProgress(data.data.progress);
+          }
+          
           if (data.data.status === 'completed') {
             setStatus('completed');
+            setProgress(null); // 完了時は進捗をクリア
           } else if (data.data.status === 'failed') {
             // 部分的な結果がある場合は表示
             if (data.data.results) {
               setStatus('completed');
+              setProgress(null);
             } else {
               setStatus('error');
+              setProgress(null);
             }
           } else {
-            // まだ処理中の場合は3秒後に再チェック
-            setTimeout(fetchAnalysisResult, 3000);
+            // まだ処理中の場合は2秒後に再チェック（より頻繁に進捗をチェック）
+            setTimeout(fetchAnalysisResult, 2000);
           }
         } else {
           console.error('Analysis fetch failed:', data.error);
@@ -96,30 +112,100 @@ const AnalysisPage: React.FC = () => {
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto">
-          <div className="inline-flex items-center justify-center w-16 h-16 mb-4">
+        <div className="text-center max-w-lg mx-auto px-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 mb-6">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">ウェブサイトを分析中...</h2>
-          <p className="text-gray-600 mb-4">分析ID: {id}</p>
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <div className="text-left space-y-2 text-sm">
-              <div className="flex items-center text-green-600">
-                <span className="mr-2">✓</span>
-                ページにアクセス
+          
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">ウェブサイトを分析中...</h2>
+          <p className="text-gray-600 mb-6">分析ID: {id}</p>
+          
+          {/* 進捗バー */}
+          <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
+            {progress ? (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-700">
+                    {progress.currentStepLabel}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    {progress.progress}%
+                  </span>
+                </div>
+                
+                {/* プログレスバー */}
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${progress.progress}%` }}
+                  ></div>
+                </div>
+                
+                {/* 残り時間 */}
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>残り約 {progress.estimatedTimeRemaining} 秒</span>
+                  <span>現在: {progress.currentStep}</span>
+                </div>
               </div>
-              <div className="flex items-center text-blue-600">
-                <div className="animate-spin rounded-full h-3 w-3 border border-blue-600 border-t-transparent mr-2"></div>
-                SEO・パフォーマンス・セキュリティを分析中
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center text-blue-600">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent mr-3"></div>
+                  <span className="text-sm">分析を初期化中...</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="bg-blue-300 h-2 rounded-full animate-pulse" style={{ width: '30%' }}></div>
+                </div>
               </div>
-              <div className="flex items-center text-gray-400">
-                <span className="mr-2">○</span>
-                レポート生成
+            )}
+          </div>
+          
+          {/* 分析ステップ表示 */}
+          <div className="bg-white rounded-lg p-6 shadow-sm">
+            <h3 className="text-sm font-medium text-gray-900 mb-4">分析ステップ</h3>
+            <div className="space-y-3 text-sm">
+              <div className={`flex items-center ${!progress || progress.currentStep === 'initializing' ? 'text-blue-600' : 'text-green-600'}`}>
+                {!progress || progress.currentStep === 'initializing' ? (
+                  <div className="animate-spin rounded-full h-3 w-3 border border-blue-600 border-t-transparent mr-3"></div>
+                ) : (
+                  <span className="mr-3">✓</span>
+                )}
+                ブラウザ初期化
+              </div>
+              
+              <div className={`flex items-center ${
+                !progress ? 'text-gray-400' :
+                progress.currentStep === 'loading' ? 'text-blue-600' :
+                ['seo', 'performance', 'security', 'accessibility', 'mobile'].includes(progress.currentStep) ? 'text-green-600' :
+                'text-gray-400'
+              }`}>
+                {progress && progress.currentStep === 'loading' ? (
+                  <div className="animate-spin rounded-full h-3 w-3 border border-blue-600 border-t-transparent mr-3"></div>
+                ) : progress && ['seo', 'performance', 'security', 'accessibility', 'mobile'].includes(progress.currentStep) ? (
+                  <span className="mr-3">✓</span>
+                ) : (
+                  <span className="mr-3">○</span>
+                )}
+                ページ読み込み
+              </div>
+              
+              <div className={`flex items-center ${
+                !progress ? 'text-gray-400' :
+                ['seo', 'performance', 'security', 'accessibility', 'mobile'].includes(progress.currentStep) ? 'text-blue-600' :
+                'text-gray-400'
+              }`}>
+                {progress && ['seo', 'performance', 'security', 'accessibility', 'mobile'].includes(progress.currentStep) ? (
+                  <div className="animate-spin rounded-full h-3 w-3 border border-blue-600 border-t-transparent mr-3"></div>
+                ) : (
+                  <span className="mr-3">○</span>
+                )}
+                SEO・パフォーマンス・セキュリティ分析
               </div>
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-4">
-            通常30秒〜1分程度で完了します
+          
+          <p className="text-xs text-gray-500 mt-6">
+            正確な分析のため、通常1-2分程度かかる場合があります
           </p>
         </div>
       </div>

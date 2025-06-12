@@ -471,22 +471,67 @@ async function performAnalysis(analysisId, url) {
   console.log(`🔍 Starting analysis for ${url}...`);
   console.log(`🔍 Environment: NODE_ENV=${process.env.NODE_ENV}, Memory: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
   
-  // 全体のタイムアウトを20秒に短縮
+  // 分析進捗を管理
+  let analysisProgress = {
+    currentStep: 'initializing',
+    progress: 0,
+    estimatedTimeRemaining: 60,
+    steps: [
+      { name: 'initializing', label: 'ブラウザを初期化中...', duration: 5 },
+      { name: 'loading', label: 'ページを読み込み中...', duration: 10 },
+      { name: 'seo', label: 'SEO分析中...', duration: 15 },
+      { name: 'performance', label: 'パフォーマンス分析中...', duration: 10 },
+      { name: 'security', label: 'セキュリティ分析中...', duration: 8 },
+      { name: 'accessibility', label: 'アクセシビリティ分析中...', duration: 7 },
+      { name: 'mobile', label: 'モバイル対応分析中...', duration: 5 }
+    ]
+  };
+  
+  // 進捗更新関数
+  const updateProgress = async (stepName, progressPercent) => {
+    const step = analysisProgress.steps.find(s => s.name === stepName);
+    if (step) {
+      analysisProgress.currentStep = stepName;
+      analysisProgress.progress = progressPercent;
+      
+      // 残り時間を計算
+      const currentStepIndex = analysisProgress.steps.findIndex(s => s.name === stepName);
+      const remainingSteps = analysisProgress.steps.slice(currentStepIndex + 1);
+      const currentStepRemaining = step.duration * (1 - progressPercent / 100);
+      const totalRemaining = remainingSteps.reduce((sum, s) => sum + s.duration, 0) + currentStepRemaining;
+      
+      analysisProgress.estimatedTimeRemaining = Math.ceil(totalRemaining);
+      
+      // データベースに進捗を保存
+      const analysisData = await getAnalysisData(analysisId);
+      if (analysisData) {
+        analysisData.progress = {
+          ...analysisProgress,
+          currentStepLabel: step.label
+        };
+        await saveAnalysisData(analysisData);
+      }
+      
+      console.log(`📊 Progress for ${analysisId}: ${step.label} (${progressPercent}%) - ETA: ${analysisProgress.estimatedTimeRemaining}s`);
+    }
+  };
+  
+  // 全体のタイムアウトを90秒に拡張（正確な分析のため）
   let timeoutTriggered = false;
   const analysisTimeout = setTimeout(async () => {
     if (timeoutTriggered) return;
     timeoutTriggered = true;
-    console.log(`⏱️ Analysis timeout for ${analysisId}, marking as completed with partial results`);
+    console.log(`⏱️ Analysis timeout for ${analysisId} after 90 seconds`);
     const partialAnalysis = {
       id: analysisId,
       url: url,
       status: 'completed',
       startedAt: new Date().toISOString(),
       completedAt: new Date().toISOString(),
-      error: 'タイムアウト: 20秒以内に完了しませんでした',
+      error: 'タイムアウト: 90秒以内に完了しませんでした',
       results: {
-        overall: { score: 30, grade: 'D' },
-        seo: { score: 20, issues: [{ type: 'warning', message: 'タイムアウトのため部分的な分析結果です' }] },
+        overall: { score: 40, grade: 'D' },
+        seo: { score: 30, issues: [{ type: 'warning', message: 'タイムアウトのため部分的な分析結果です' }] },
         performance: { score: 50, loadTime: null, firstContentfulPaint: null },
         security: { score: url.startsWith('https://') ? 70 : 20, httpsUsage: url.startsWith('https://'), issues: [] },
         accessibility: { score: 40, wcagLevel: 'A', violations: 1 },
@@ -494,55 +539,8 @@ async function performAnalysis(analysisId, url) {
       }
     };
     await saveAnalysisData(partialAnalysis);
-  }, 20000); // 20秒でタイムアウト
+  }, 90000); // 90秒でタイムアウト
   
-  // 最優先タイムアウト（5秒） - Railway環境での即座な応答
-  const emergencyTimeout = setTimeout(async () => {
-    if (timeoutTriggered) return;
-    timeoutTriggered = true;
-    console.log(`🚨 Emergency timeout triggered for ${analysisId} (5 seconds)`);
-    const emergencyAnalysis = {
-      id: analysisId,
-      url: url,
-      status: 'completed',
-      startedAt: new Date().toISOString(),
-      completedAt: new Date().toISOString(),
-      error: '5秒タイムアウトにより強制完了されました',
-      results: {
-        overall: { score: 20, grade: 'F' },
-        seo: { score: 10, issues: [{ type: 'error', message: 'Railway環境での緊急タイムアウト - Puppeteer初期化に問題があります' }] },
-        performance: { score: 30, loadTime: null, firstContentfulPaint: null },
-        security: { score: url.startsWith('https://') ? 50 : 5, httpsUsage: url.startsWith('https://'), issues: [] },
-        accessibility: { score: 20, wcagLevel: 'A', violations: 1 },
-        mobile: { score: 15, isResponsive: false, hasViewportMeta: false }
-      }
-    };
-    await saveAnalysisData(emergencyAnalysis);
-  }, 5000); // 5秒で緊急タイムアウト
-  
-  // 追加の安全タイムアウト（15秒）
-  const safetyTimeout = setTimeout(async () => {
-    if (timeoutTriggered) return;
-    timeoutTriggered = true;
-    console.log(`🚨 Safety timeout triggered for ${analysisId}`);
-    const failedAnalysis = {
-      id: analysisId,
-      url: url,
-      status: 'completed',
-      startedAt: new Date().toISOString(),
-      completedAt: new Date().toISOString(),
-      error: 'サーバーの高負荷によりタイムアウトしました',
-      results: {
-        overall: { score: 25, grade: 'F' },
-        seo: { score: 15, issues: [{ type: 'error', message: 'サーバータイムアウトのため分析を完了できませんでした' }] },
-        performance: { score: 40, loadTime: null, firstContentfulPaint: null },
-        security: { score: url.startsWith('https://') ? 60 : 10, httpsUsage: url.startsWith('https://'), issues: [] },
-        accessibility: { score: 30, wcagLevel: 'A', violations: 1 },
-        mobile: { score: 20, isResponsive: false, hasViewportMeta: false }
-      }
-    };
-    await saveAnalysisData(failedAnalysis);
-  }, 15000); // 15秒でより確実なタイムアウト
   
   let browser;
   try {
@@ -553,6 +551,8 @@ async function performAnalysis(analysisId, url) {
       // 実行可能パスのチェック
       const execPath = process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath();
       console.log(`📍 Using Chrome executable: ${execPath}`);
+      
+      await updateProgress('initializing', 20);
       
       browser = await Promise.race([
         puppeteer.launch({
@@ -566,20 +566,18 @@ async function performAnalysis(analysisId, url) {
             '--disable-gpu',
             '--no-first-run',
             '--no-zygote',
-            '--single-process',
             '--disable-extensions',
             '--disable-plugins',
-            '--disable-images',
-            '--disable-javascript', // JS無効化で高速化
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor',
-            '--max_old_space_size=256'
+            '--memory-pressure-off',
+            '--max_old_space_size=512'
           ]
         }),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Puppeteer launch timeout after 3 seconds')), 3000)
+          setTimeout(() => reject(new Error('Puppeteer launch timeout after 15 seconds')), 15000)
         )
       ]);
+      
+      await updateProgress('initializing', 80);
       
       // ブラウザが正常に起動したかチェック
       const pages = await browser.pages();
@@ -619,12 +617,15 @@ async function performAnalysis(analysisId, url) {
     
     const startTime = Date.now();
     
-    // ページアクセス（より短いタイムアウトで高速化）
+    await updateProgress('initializing', 100);
+    await updateProgress('loading', 10);
+    
+    // ページアクセス（正確な分析のため十分な時間を確保）
     let response;
     const strategies = [
-      { waitUntil: 'domcontentloaded', timeout: 8000 },
-      { waitUntil: 'load', timeout: 6000 },
-      { waitUntil: 'networkidle2', timeout: 4000 }
+      { waitUntil: 'domcontentloaded', timeout: 15000 },
+      { waitUntil: 'load', timeout: 20000 },
+      { waitUntil: 'networkidle2', timeout: 10000 }
     ];
     
     let lastError;
@@ -632,6 +633,7 @@ async function performAnalysis(analysisId, url) {
       const strategy = strategies[i];
       try {
         console.log(`📡 Attempt ${i + 1}: Trying with ${strategy.waitUntil}, timeout: ${strategy.timeout}ms`);
+        await updateProgress('loading', 30 + (i * 20));
         response = await page.goto(url, strategy);
         console.log(`✅ Success with strategy ${i + 1}`);
         break;
@@ -648,25 +650,37 @@ async function performAnalysis(analysisId, url) {
       }
     }
     
+    await updateProgress('loading', 100);
+    
     const loadTime = (Date.now() - startTime) / 1000;
     
     // SEO分析
+    await updateProgress('seo', 0);
     const seoResults = await analyzeSEO(page);
+    await updateProgress('seo', 100);
     
     // パフォーマンス分析
+    await updateProgress('performance', 0);
     const performanceResults = await analyzePerformance(page, loadTime);
+    await updateProgress('performance', 100);
     
     // セキュリティ分析
+    await updateProgress('security', 0);
     const securityResults = await analyzeSecurity(page, response);
+    await updateProgress('security', 100);
     
     // アクセシビリティ分析
+    await updateProgress('accessibility', 0);
     const accessibilityResults = await analyzeAccessibility(page);
+    await updateProgress('accessibility', 100);
     
     // モバイル対応分析
+    await updateProgress('mobile', 0);
     const mobileResults = await analyzeMobile(page);
     
     // コンテンツ品質分析
     const contentQualityResults = await analyzeContentQuality(page);
+    await updateProgress('mobile', 100);
     
     // 高度なパフォーマンス分析
     const advancedPerformanceResults = await analyzeAdvancedPerformance(page);
