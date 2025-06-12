@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { AnalysisRequest, Analysis, ApiResponse } from '../types/analysis';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://website-analyzer-production-c933.up.railway.app';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
