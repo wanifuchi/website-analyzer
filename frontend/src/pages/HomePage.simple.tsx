@@ -171,10 +171,13 @@ const ConnectionStatus: React.FC = () => {
   React.useEffect(() => {
     const checkConnection = async () => {
       try {
+        console.log('ヘルスチェック開始...');
         const response = await fetch('https://website-analyzer-production-c933.up.railway.app/api/health');
         const data = await response.json();
+        console.log('ヘルスチェック結果:', data);
         setStatus(data.success ? 'online' : 'offline');
-      } catch {
+      } catch (error) {
+        console.error('ヘルスチェックエラー:', error);
         setStatus('offline');
       }
     };
