@@ -13,6 +13,7 @@
     "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true",
     "PUPPETEER_EXECUTABLE_PATH": "/usr/bin/google-chrome-stable",
     "PUPPETEER_DISABLE_HEADLESS_WARNING": "true",
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "RAILWAY_DEPLOYMENT_TRIGGER": "2025-01-13T11:36:00Z"
   }
 }
