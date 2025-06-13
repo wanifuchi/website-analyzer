@@ -97,6 +97,96 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// PageSpeed API テストエンドポイント
+app.get('/api/pagespeed-test', async (req, res) => {
+  try {
+    const PageSpeedInsightsClient = require('./pagespeed-client');
+    const client = new PageSpeedInsightsClient();
+    
+    res.json({
+      success: true,
+      pageSpeedClientExists: true,
+      apiKeyConfigured: client.isApiAvailable(),
+      timestamp: new Date().toISOString(),
+      testUrl: 'https://example.com'
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      pageSpeedClientExists: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// 実際のPageSpeed分析テスト
+app.get('/api/pagespeed-test-run/:url?', async (req, res) => {
+  try {
+    const testUrl = req.params.url ? decodeURIComponent(req.params.url) : 'https://example.com';
+    
+    const PageSpeedInsightsClient = require('./pagespeed-client');
+    const client = new PageSpeedInsightsClient();
+    
+    if (!client.isApiAvailable()) {
+      return res.json({
+        success: false,
+        message: 'PageSpeed API キーが設定されていません',
+        fallback: true
+      });
+    }
+    
+    console.log(`🧪 PageSpeed API テスト実行: ${testUrl}`);
+    const result = await client.analyzeUrl(testUrl, { strategy: 'mobile' });
+    
+    res.json({
+      success: true,
+      url: testUrl,
+      hasRealData: !result.isApiAvailable === false,
+      scores: result.scores,
+      coreWebVitals: result.coreWebVitals,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    res.json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// 分析エンジンテストエンドポイント
+app.get('/api/analyzer-test', async (req, res) => {
+  try {
+    const SimpleWebAnalyzer = require('./analyzer-simple');
+    const analyzer = new SimpleWebAnalyzer();
+    
+    // PageSpeedクライアントが統合されているかチェック
+    const hasPageSpeedClient = !!analyzer.pageSpeedClient;
+    const hasAnalyzeWithPageSpeed = typeof analyzer.analyzeWithPageSpeed === 'function';
+    const hasEnhancePerformance = typeof analyzer.enhancePerformanceWithPageSpeed === 'function';
+    
+    res.json({
+      success: true,
+      analyzerExists: true,
+      hasPageSpeedClient,
+      hasAnalyzeWithPageSpeed,
+      hasEnhancePerformance,
+      pageSpeedClientAvailable: hasPageSpeedClient ? analyzer.pageSpeedClient.isApiAvailable() : false,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      analyzerExists: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Puppeteer診断エンドポイント
 app.get('/api/puppeteer-check', async (req, res) => {
   try {
