@@ -9,6 +9,7 @@ const database = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
+// Railway強制再デプロイ: 2025-01-13T20:31:00Z
 
 // 分析結果を一時保存（データベース初期化前のフォールバック）
 const analyses = new Map();
