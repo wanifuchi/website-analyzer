@@ -24,7 +24,7 @@ class PageSpeedInsightsClient {
   async analyzeUrl(url, options = {}) {
     const {
       strategy = 'mobile', // 'mobile' または 'desktop'
-      categories = ['performance', 'accessibility', 'best-practices', 'seo'],
+      category = 'performance', // 'performance', 'accessibility', 'best-practices', 'seo'
       locale = 'ja'
     } = options;
 
@@ -40,7 +40,7 @@ class PageSpeedInsightsClient {
         key: this.apiKey,
         strategy: strategy,
         locale: locale,
-        category: categories.join(',')
+        category: category
       };
 
       const response = await axios.get(this.endpoint, {
@@ -56,6 +56,15 @@ class PageSpeedInsightsClient {
 
     } catch (error) {
       console.error(`❌ PageSpeed Insights API エラー:`, error.message);
+      console.error('詳細なエラー情報:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          params: error.config?.params
+        }
+      });
       
       // API制限エラーの場合
       if (error.response?.status === 429) {
@@ -64,7 +73,8 @@ class PageSpeedInsightsClient {
       
       // API キーエラーの場合
       if (error.response?.status === 400 || error.response?.status === 403) {
-        throw new Error('PageSpeed Insights API キーが無効です。設定を確認してください。');
+        const errorDetail = error.response?.data?.error?.message || '不明';
+        throw new Error(`PageSpeed Insights API キーエラー: ${errorDetail} (Status: ${error.response?.status})`);
       }
 
       // その他のエラーの場合はフォールバック

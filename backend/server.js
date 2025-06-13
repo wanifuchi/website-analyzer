@@ -128,15 +128,9 @@ app.get('/api/pagespeed-test-run/:url?', async (req, res) => {
     const PageSpeedInsightsClient = require('./pagespeed-client');
     const client = new PageSpeedInsightsClient();
     
-    if (!client.isApiAvailable()) {
-      return res.json({
-        success: false,
-        message: 'PageSpeed API キーが設定されていません',
-        fallback: true
-      });
-    }
-    
     console.log(`🧪 PageSpeed API テスト実行: ${testUrl}`);
+    console.log('APIキー使用可能:', client.isApiAvailable());
+    
     const result = await client.analyzeUrl(testUrl, { strategy: 'mobile' });
     
     res.json({
@@ -145,10 +139,51 @@ app.get('/api/pagespeed-test-run/:url?', async (req, res) => {
       hasRealData: !result.isApiAvailable === false,
       scores: result.scores,
       coreWebVitals: result.coreWebVitals,
+      apiKeyUsed: client.isApiAvailable(),
       timestamp: new Date().toISOString()
     });
     
   } catch (error) {
+    res.json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// APIキーなしPageSpeedテスト
+app.get('/api/pagespeed-test-nokey/:url?', async (req, res) => {
+  try {
+    const testUrl = req.params.url ? decodeURIComponent(req.params.url) : 'https://example.com';
+    
+    // 一時的にAPIキーを無効化してテスト
+    const originalKey = process.env.GOOGLE_PAGESPEED_API_KEY;
+    delete process.env.GOOGLE_PAGESPEED_API_KEY;
+    
+    const PageSpeedInsightsClient = require('./pagespeed-client');
+    const client = new PageSpeedInsightsClient();
+    
+    console.log(`🧪 PageSpeed API テスト実行（キーなし）: ${testUrl}`);
+    const result = await client.analyzeUrl(testUrl, { strategy: 'mobile' });
+    
+    // APIキーを復元
+    process.env.GOOGLE_PAGESPEED_API_KEY = originalKey;
+    
+    res.json({
+      success: true,
+      url: testUrl,
+      hasRealData: !result.isApiAvailable === false,
+      scores: result.scores,
+      coreWebVitals: result.coreWebVitals,
+      apiKeyUsed: false,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    // APIキーを復元
+    process.env.GOOGLE_PAGESPEED_API_KEY = originalKey;
+    
     res.json({
       success: false,
       error: error.message,
