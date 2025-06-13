@@ -1,3 +1,4 @@
+# Force rebuild: 2025-06-14
 [phases.setup]
 nixPkgs = ["nodejs-18_x", "chromium"]
 
