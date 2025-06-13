@@ -1,3 +1,5 @@
+// Version: 1.0.1 - PageSpeed Integration Enabled
+// Last Updated: 2025-01-13T11:27:00Z
 const axios = require('axios');
 const cheerio = require('cheerio');
 const PageSpeedInsightsClient = require('./pagespeed-client');

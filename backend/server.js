@@ -85,7 +85,7 @@ app.get('/api/health', (req, res) => {
     success: true,
     message: 'Toneya Analysis V1 API is running',
     timestamp: new Date().toISOString(),
-    version: '1.0.0',
+    version: '1.0.1',
     database: {
       connected: isDatabaseConnected,
       type: isDatabaseConnected ? 'PostgreSQL' : 'In-memory'
@@ -210,7 +210,9 @@ app.get('/api/analyzer-test', async (req, res) => {
       hasPageSpeedClient,
       hasAnalyzeWithPageSpeed,
       hasEnhancePerformance,
+      hasPageSpeedSupport: hasPageSpeedClient && hasAnalyzeWithPageSpeed,
       pageSpeedClientAvailable: hasPageSpeedClient ? analyzer.pageSpeedClient.isApiAvailable() : false,
+      analyzerVersion: '1.0.1',
       timestamp: new Date().toISOString()
     });
   } catch (error) {
