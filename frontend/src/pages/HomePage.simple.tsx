@@ -251,10 +251,10 @@ const HomePage: React.FC = () => {
                         feature.accent
                       )} />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-200 group-hover:text-white transition-colors duration-300">
+                    <h3 className="text-2xl font-bold text-slate-200 group-hover:text-white transition-colors duration-300">
                       {feature.title}
                     </h3>
-                    <p className="text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors duration-300">
+                    <p className="text-lg text-slate-300 leading-relaxed group-hover:text-slate-200 transition-colors duration-300 font-medium">
                       {feature.description}
                     </p>
                   </div>
@@ -274,10 +274,10 @@ const HomePage: React.FC = () => {
                     <span className="relative z-10">♿</span>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-slate-200 group-hover:text-white transition-colors duration-300">
+                    <h3 className="text-xl font-bold text-slate-200 group-hover:text-white transition-colors duration-300">
                       アクセシビリティ診断
                     </h3>
-                    <p className="text-slate-400 group-hover:text-slate-300 transition-colors duration-300">
+                    <p className="text-base text-slate-300 group-hover:text-slate-200 transition-colors duration-300 font-medium">
                       WCAG 2.1ガイドラインに基づく障害者対応度チェック
                     </p>
                   </div>
@@ -294,10 +294,10 @@ const HomePage: React.FC = () => {
                     <span className="relative z-10">📱</span>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-slate-200 group-hover:text-white transition-colors duration-300">
+                    <h3 className="text-xl font-bold text-slate-200 group-hover:text-white transition-colors duration-300">
                       モバイル対応分析
                     </h3>
-                    <p className="text-slate-400 group-hover:text-slate-300 transition-colors duration-300">
+                    <p className="text-base text-slate-300 group-hover:text-slate-200 transition-colors duration-300 font-medium">
                       スマートフォン・タブレットでの表示や操作性を詳細評価
                     </p>
                   </div>
