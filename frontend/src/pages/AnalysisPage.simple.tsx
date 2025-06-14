@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { pageSpeedService } from '../services/pageSpeedService';
 import { getCoreWebVitalEvaluation, getColorClasses } from '../utils/coreWebVitalsEvaluator';
 import MetricCard from '../components/MetricCard';
-import { useGeneratePDFReport, useExportCSV } from '../hooks/useAnalysis';
+import html2canvas from 'html2canvas';
 
 interface AnalysisProgress {
   currentStep: string;
@@ -20,8 +20,6 @@ const AnalysisPage: React.FC = () => {
   const [progress, setProgress] = useState<AnalysisProgress | null>(null);
   const [pageSpeedLoading, setPageSpeedLoading] = useState<boolean>(false);
   
-  const generatePDFMutation = useGeneratePDFReport();
-  const exportCSVMutation = useExportCSV();
 
 
   useEffect(() => {
@@ -435,15 +433,55 @@ const AnalysisPage: React.FC = () => {
     }
   };
 
-  const handleDownloadPDF = () => {
-    if (analysisData?.id) {
-      generatePDFMutation.mutate(analysisData.id);
-    }
-  };
-
-  const handleExportCSV = () => {
-    if (analysisData?.id) {
-      exportCSVMutation.mutate(analysisData.id);
+  const handleScreenshot = async () => {
+    try {
+      // 分析結果コンテナを対象にする
+      const element = document.querySelector('.analysis-results-container') || document.body;
+      
+      // より高品質な設定でスクリーンショットを撮影
+      const canvas = await html2canvas(element as HTMLElement, {
+        backgroundColor: '#0f172a', // ダークテーマ背景
+        scale: 2, // 高解像度（2x）
+        useCORS: true,
+        allowTaint: true,
+        scrollX: 0,
+        scrollY: 0,
+        width: window.innerWidth,
+        height: Math.max(document.documentElement.scrollHeight, window.innerHeight),
+        logging: false, // デバッグログを無効化
+        imageTimeout: 15000, // 画像読み込みタイムアウト
+        removeContainer: true
+      });
+      
+      // 高品質JPEGとして保存（PNGより軽く、品質も良い）
+      const link = document.createElement('a');
+      const url = analysisData?.url?.replace(/[^a-zA-Z0-9]/g, '-') || 'unknown';
+      link.download = `analysis-${url}-${new Date().toISOString().split('T')[0]}.png`;
+      link.href = canvas.toDataURL('image/png', 0.95); // 高品質PNG
+      link.click();
+      
+      // 成功通知
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-xl shadow-lg z-50';
+      notification.textContent = '📸 スクリーンショットが保存されました';
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+      
+    } catch (error) {
+      console.error('スクリーンショットエラー:', error);
+      
+      // エラー通知
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-50';
+      notification.textContent = '❌ スクリーンショットの保存に失敗しました';
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
     }
   };
 
@@ -459,7 +497,7 @@ const AnalysisPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+    <div className="analysis-results-container min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
       {/* 近未来的背景装飾 */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_50%)] -z-10" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(168,85,247,0.1),transparent_50%)] -z-10" />
@@ -1038,40 +1076,13 @@ const AnalysisPage: React.FC = () => {
         )}
 
         {/* アクションボタン */}
-        <div className="mt-8 flex justify-center space-x-4">
+        <div className="mt-8 flex justify-center">
           <button 
-            onClick={handleDownloadPDF}
-            disabled={generatePDFMutation.isPending}
-            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white px-8 py-4 rounded-xl flex items-center disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg hover:shadow-xl transition-all duration-300"
+            onClick={handleScreenshot}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-8 py-4 rounded-xl flex items-center font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
           >
-            {generatePDFMutation.isPending ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
-                PDF生成中...
-              </>
-            ) : (
-              <>
-                <span className="mr-3 text-lg">📄</span>
-                PDFレポートをダウンロード
-              </>
-            )}
-          </button>
-          <button 
-            onClick={handleExportCSV}
-            disabled={exportCSVMutation.isPending}
-            className="bg-gradient-to-r from-orange-500 to-yellow-600 hover:from-orange-400 hover:to-yellow-500 text-white px-8 py-4 rounded-xl flex items-center disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg hover:shadow-xl transition-all duration-300"
-          >
-            {exportCSVMutation.isPending ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
-                CSV生成中...
-              </>
-            ) : (
-              <>
-                <span className="mr-3 text-lg">📊</span>
-                CSVエクスポート
-              </>
-            )}
+            <span className="mr-3 text-lg">📸</span>
+            高品質スクリーンショットを保存
           </button>
         </div>
 
