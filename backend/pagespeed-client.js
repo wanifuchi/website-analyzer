@@ -1,12 +1,17 @@
 const axios = require('axios');
 
+// 環境変数の確実な読み込み
+if (!process.env.GOOGLE_PAGESPEED_API_KEY) {
+  require('dotenv').config();
+}
+
 /**
  * Google PageSpeed Insights API クライアント
  * リアルタイムでのパフォーマンス測定とCore Web Vitals取得
  */
 class PageSpeedInsightsClient {
   constructor() {
-    // 環境変数からAPIキーを取得
+    // 環境変数からAPIキーを取得（再読み込み後）
     this.apiKey = process.env.GOOGLE_PAGESPEED_API_KEY;
     this.endpoint = process.env.PAGESPEED_API_ENDPOINT || 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
     this.timeout = 60000; // 60秒タイムアウト

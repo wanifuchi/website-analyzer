@@ -22,6 +22,8 @@
    ```
    GOOGLE_PAGESPEED_API_KEY=your_actual_api_key_here
    ```
+   
+**重要**: APIキーは絶対にGitにコミットしないでください！
 
 ### Railway（本番環境）
 

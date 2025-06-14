@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { pageSpeedService } from '../services/pageSpeedService';
 
 interface AnalysisProgress {
   currentStep: string;
@@ -36,6 +37,12 @@ const AnalysisPage: React.FC = () => {
           if (data.data.status === 'completed') {
             setStatus('completed');
             setProgress(null); // 完了時は進捗をクリア
+            
+            // PageSpeedデータが欠落している場合は補完取得
+            if (data.data.results && !data.data.results.pageSpeed && data.data.url) {
+              console.log('⚠️ PageSpeedデータが欠落しています。補完取得を開始...');
+              fetchPageSpeedDataFallback(data.data.url);
+            }
           } else if (data.data.status === 'failed') {
             // 部分的な結果がある場合は表示
             if (data.data.results) {
@@ -103,6 +110,30 @@ const AnalysisPage: React.FC = () => {
         };
         setAnalysisData(mockAnalysis);
         setStatus('completed');
+      }
+    };
+    
+    // PageSpeedデータの補完取得
+    const fetchPageSpeedDataFallback = async (url: string) => {
+      try {
+        console.log('🚀 PageSpeedデータ補完取得開始:', url);
+        const pageSpeedData = await pageSpeedService.analyzeUrl(url);
+        
+        if (pageSpeedData && analysisData) {
+          // 既存の分析データにPageSpeedデータを追加
+          const updatedAnalysisData = {
+            ...analysisData,
+            results: {
+              ...analysisData.results,
+              pageSpeed: pageSpeedData
+            }
+          };
+          
+          console.log('✅ PageSpeedデータ補完完了');
+          setAnalysisData(updatedAnalysisData);
+        }
+      } catch (error) {
+        console.error('❌ PageSpeedデータ補完エラー:', error);
       }
     };
     

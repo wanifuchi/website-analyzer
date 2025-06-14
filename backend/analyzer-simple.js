@@ -1,7 +1,13 @@
-// Version: 1.0.1 - PageSpeed Integration Enabled
-// Last Updated: 2025-01-13T11:27:00Z
+// Version: 1.0.2 - PageSpeed Integration Enabled with Environment Fix
+// Last Updated: 2025-06-14T03:45:00Z
 const axios = require('axios');
 const cheerio = require('cheerio');
+
+// 環境変数の確実な読み込み
+if (!process.env.GOOGLE_PAGESPEED_API_KEY) {
+  require('dotenv').config();
+}
+
 const PageSpeedInsightsClient = require('./pagespeed-client');
 
 // 軽量で確実なウェブサイト分析エンジン

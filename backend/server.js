@@ -121,6 +121,45 @@ app.get('/api/pagespeed-test', async (req, res) => {
   }
 });
 
+// PageSpeed分析の補完取得エンドポイント（フロントエンド用）
+app.post('/api/pagespeed/analyze', async (req, res) => {
+  try {
+    const { url } = req.body;
+    
+    if (!url) {
+      return res.status(400).json({
+        success: false,
+        error: 'URLが必要です'
+      });
+    }
+
+    const PageSpeedInsightsClient = require('./pagespeed-client');
+    const client = new PageSpeedInsightsClient();
+    
+    if (!client.isApiAvailable()) {
+      return res.status(503).json({
+        success: false,
+        error: 'PageSpeed Insights API が利用できません'
+      });
+    }
+
+    console.log(`🚀 フロントエンド補完用PageSpeed分析: ${url}`);
+    const results = await client.analyzeBothStrategies(url);
+    
+    res.json({
+      success: true,
+      data: results
+    });
+
+  } catch (error) {
+    console.error('❌ PageSpeed補完分析エラー:', error);
+    res.status(500).json({
+      success: false,
+      error: 'PageSpeed分析に失敗しました'
+    });
+  }
+});
+
 // 実際のPageSpeed分析テスト
 app.get('/api/pagespeed-test-run/:url?', async (req, res) => {
   try {
@@ -663,6 +702,23 @@ async function performAnalysis(analysisId, url) {
     await updateProgress('loading', 100);
     await updateProgress('analyzing', 0);
     
+    // PageSpeedデータのデバッグログ
+    console.log(`🔍 PageSpeed Data Debug:`, {
+      hasPageSpeed: !!results.pageSpeed,
+      pageSpeedData: results.pageSpeed ? {
+        mobile: {
+          hasData: !!results.pageSpeed.mobile,
+          hasScores: !!results.pageSpeed.mobile?.scores,
+          hasCoreWebVitals: !!results.pageSpeed.mobile?.coreWebVitals,
+          performanceScore: results.pageSpeed.mobile?.scores?.performance
+        },
+        desktop: {
+          hasData: !!results.pageSpeed.desktop,
+          performanceScore: results.pageSpeed.desktop?.scores?.performance
+        }
+      } : null
+    });
+
     console.log(`✅ Analysis results for ${url}:`, {
       overall: results.overall,
       scores: {
@@ -671,7 +727,12 @@ async function performAnalysis(analysisId, url) {
         security: results.security.score,
         accessibility: results.accessibility.score,
         mobile: results.mobile.score
-      }
+      },
+      pageSpeedAvailable: !!results.pageSpeed,
+      pageSpeedScores: results.pageSpeed ? {
+        mobile: results.pageSpeed.mobile?.scores?.performance,
+        desktop: results.pageSpeed.desktop?.scores?.performance
+      } : null
     });
     
     await updateProgress('analyzing', 100);
