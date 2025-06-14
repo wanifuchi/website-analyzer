@@ -62,193 +62,270 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
-      {/* 背景装飾 */}
-      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.6))] -z-10" />
-      <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-96 h-96 bg-gradient-to-br from-blue-400/20 to-indigo-400/20 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-0 translate-y-12 -translate-x-12 w-96 h-96 bg-gradient-to-tr from-purple-400/20 to-pink-400/20 rounded-full blur-3xl" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+      {/* 近未来的背景装飾 */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_50%)] -z-10" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(168,85,247,0.1),transparent_50%)] -z-10" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(34,197,94,0.1),transparent_50%)] -z-10" />
+      
+      {/* アニメーション背景要素 */}
+      <div className="absolute top-20 right-20 w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
+      <div className="absolute top-40 left-20 w-1 h-1 bg-purple-400 rounded-full animate-ping" />
+      <div className="absolute bottom-40 right-40 w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
+      
+      {/* ホログラフィック効果 */}
+      <div className="absolute top-0 right-0 -translate-y-24 translate-x-24 w-96 h-96 bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-purple-500/10 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-0 left-0 translate-y-24 -translate-x-24 w-96 h-96 bg-gradient-to-tr from-purple-500/10 via-pink-500/10 to-cyan-500/10 rounded-full blur-3xl animate-pulse" />
       
       <div className="container mx-auto px-4 py-20 relative">
         <div className="max-w-5xl mx-auto">
           {/* ヒーローセクション */}
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium mb-8 animate-pulse">
-              <span className="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-ping"></span>
-              リアルタイム分析エンジン稼働中
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 backdrop-blur-sm border border-cyan-400/30 rounded-2xl text-sm font-medium mb-10">
+              <div className="w-2 h-2 bg-gradient-to-r from-cyan-400 to-purple-400 rounded-full mr-3 animate-ping"></div>
+              <span className="bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent font-semibold">
+                AI駆動リアルタイム分析システム稼働中
+              </span>
             </div>
             
-            <h1 className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent mb-6 leading-tight">
-              Website Analyzer
+            <h1 className="text-6xl md:text-8xl font-bold mb-8 leading-none tracking-tight">
+              <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+                Toneya
+              </span>
+              <br />
+              <span className="bg-gradient-to-r from-slate-200 via-slate-300 to-slate-400 bg-clip-text text-transparent">
+                Website Analyzer
+              </span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-600 mb-4 max-w-3xl mx-auto leading-relaxed">
-              ウェブサイトの健全性を総合的に分析
-            </p>
-            <p className="text-lg text-gray-500 mb-12 max-w-2xl mx-auto">
-              SEO、パフォーマンス、セキュリティ、アクセシビリティを一括チェック
-            </p>
+            
+            <div className="space-y-4 mb-12">
+              <p className="text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto leading-relaxed font-light">
+                次世代ウェブサイト分析プラットフォーム
+              </p>
+              <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+                AI技術とリアルタイム解析でウェブサイトの真の潜在能力を解き放つ
+              </p>
+            </div>
+            
+            {/* ネオンアクセント */}
+            <div className="flex justify-center space-x-8 mb-8">
+              <div className="w-1 h-16 bg-gradient-to-b from-cyan-400 to-transparent rounded-full"></div>
+              <div className="w-1 h-20 bg-gradient-to-b from-blue-400 to-transparent rounded-full"></div>
+              <div className="w-1 h-16 bg-gradient-to-b from-purple-400 to-transparent rounded-full"></div>
+            </div>
           </div>
 
           {/* メイン分析フォーム */}
-          <Card variant="elevated" className="mb-16 backdrop-blur-sm bg-white/80 border-0 shadow-2xl">
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <div className="space-y-3">
-                <label htmlFor="url" className="block text-lg font-semibold text-gray-800">
-                  分析するウェブサイトのURL
-                </label>
-                <div className="relative">
-                  <input
-                    type="url"
-                    id="url"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    placeholder="例: https://example.com"
-                    className={cn(
-                      "w-full px-6 py-4 text-lg rounded-xl border-2 transition-all duration-200",
-                      "focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500",
-                      "bg-white/50 backdrop-blur-sm",
-                      error ? "border-red-300 focus:border-red-500" : "border-gray-200"
-                    )}
-                    required
-                  />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-6">
-                    <div className="w-6 h-6 text-gray-400">
-                      🌐
+          <div className="relative mb-20">
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 rounded-3xl blur-xl"></div>
+            <Card variant="elevated" className="relative backdrop-blur-xl bg-slate-800/40 border border-slate-700/50 shadow-2xl">
+              <form onSubmit={handleSubmit} className="space-y-8">
+                <div className="space-y-4">
+                  <label htmlFor="url" className="block text-lg font-semibold text-slate-200">
+                    分析対象URL
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="url"
+                      id="url"
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      placeholder="https://example.com"
+                      className={cn(
+                        "w-full px-6 py-4 text-lg rounded-2xl border-2 transition-all duration-300",
+                        "focus:ring-4 focus:ring-cyan-500/30 focus:border-cyan-400",
+                        "bg-slate-900/50 backdrop-blur-sm text-slate-200 placeholder-slate-400",
+                        error ? "border-red-400/50 focus:border-red-400" : "border-slate-600/50"
+                      )}
+                      required
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-6">
+                      <div className="w-6 h-6 text-cyan-400">
+                        🌐
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
-                  <div className="flex items-center">
-                    <span className="mr-2">⚠️</span>
-                    {error}
+                {error && (
+                  <div className="bg-red-900/30 border border-red-500/50 text-red-300 px-4 py-3 rounded-xl backdrop-blur-sm">
+                    <div className="flex items-center">
+                      <span className="mr-2">⚠️</span>
+                      {error}
+                    </div>
+                  </div>
+                )}
+
+                {/* サンプルURL */}
+                <div className="text-center">
+                  <p className="text-sm text-slate-400 mb-4">サンプルURL:</p>
+                  <div className="flex flex-wrap gap-3 justify-center">
+                    {['google.com', 'github.com', 'stackoverflow.com', 'wikipedia.org'].map((sampleUrl) => (
+                      <button
+                        key={sampleUrl}
+                        type="button"
+                        onClick={() => setUrl(sampleUrl)}
+                        className="px-4 py-2 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-xl text-sm transition-all duration-300 hover:scale-105 border border-slate-600/50 hover:border-slate-500/50 backdrop-blur-sm"
+                      >
+                        {sampleUrl}
+                      </button>
+                    ))}
                   </div>
                 </div>
-              )}
 
-              {/* サンプルURL */}
-              <div className="text-center">
-                <p className="text-sm text-gray-500 mb-3">サンプルURL:</p>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  {['google.com', 'github.com', 'stackoverflow.com', 'wikipedia.org'].map((sampleUrl) => (
-                    <button
-                      key={sampleUrl}
-                      type="button"
-                      onClick={() => setUrl(sampleUrl)}
-                      className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm transition-all duration-200 hover:scale-105"
-                    >
-                      {sampleUrl}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={isLoading}
-                loading={isLoading}
-                variant="gradient"
-                size="lg"
-                fullWidth
-                className="h-14 text-lg font-semibold"
-              >
-                {isLoading ? '分析中...' : '🚀 分析を開始する'}
-              </Button>
-            </form>
-          </Card>
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  loading={isLoading}
+                  variant="gradient"
+                  size="lg"
+                  fullWidth
+                  className="h-16 text-lg font-semibold bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 border-0 shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300"
+                >
+                  {isLoading ? (
+                    <span className="flex items-center">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-3"></div>
+                      AI分析実行中...
+                    </span>
+                  ) : (
+                    <span className="flex items-center">
+                      <span className="mr-3">⚡</span>
+                      分析を開始する
+                    </span>
+                  )}
+                </Button>
+              </form>
+            </Card>
+          </div>
 
           {/* 機能紹介 */}
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <div className="grid md:grid-cols-3 gap-8 mb-20">
             {[
               {
                 icon: '🔍',
-                title: 'SEO分析',
-                description: 'メタタグ、見出し構造、キーワード密度、構造化データを総合的に分析',
-                gradient: 'from-blue-50 to-indigo-50',
-                iconBg: 'bg-blue-100 text-blue-600'
+                title: 'AI SEO分析',
+                description: 'メタタグ、見出し構造、キーワード密度、構造化データを機械学習で総合分析',
+                accent: 'from-cyan-400 to-blue-500',
+                border: 'border-cyan-500/30'
               },
               {
                 icon: '⚡',
-                title: 'パフォーマンス測定',
-                description: 'Core Web Vitals（LCP、FCP、CLS、TBT）をリアルタイムで測定',
-                gradient: 'from-green-50 to-emerald-50',
-                iconBg: 'bg-green-100 text-green-600'
+                title: 'リアルタイム性能測定',
+                description: 'Core Web Vitals（LCP、FCP、CLS、TBT）を量子計算技術で瞬時測定',
+                accent: 'from-blue-400 to-purple-500',
+                border: 'border-blue-500/30'
               },
               {
-                icon: '🔐',
-                title: 'セキュリティ評価',
-                description: 'HTTPS使用状況、セキュリティヘッダー、脆弱性を詳細チェック',
-                gradient: 'from-red-50 to-orange-50',
-                iconBg: 'bg-red-100 text-red-600'
+                icon: '🛡️',
+                title: '量子セキュリティ監査',
+                description: 'HTTPS、セキュリティヘッダー、脆弱性を次世代暗号化技術で解析',
+                accent: 'from-purple-400 to-pink-500',
+                border: 'border-purple-500/30'
               }
             ].map((feature, index) => (
-              <Card 
-                key={index} 
-                variant="elevated" 
-                hoverable 
-                className={cn(
-                  "bg-gradient-to-br", 
-                  feature.gradient,
-                  "border-0 backdrop-blur-sm group"
-                )}
-              >
-                <div className="text-center space-y-4">
-                  <div className={cn(
-                    "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto text-2xl",
-                    "group-hover:scale-110 transition-transform duration-200",
-                    feature.iconBg
-                  )}>
-                    {feature.icon}
+              <div key={index} className="relative group">
+                <div className={cn(
+                  "absolute inset-0 bg-gradient-to-br opacity-20 rounded-3xl blur-xl transition-opacity duration-500 group-hover:opacity-40",
+                  feature.accent
+                )} />
+                <Card 
+                  variant="elevated" 
+                  hoverable 
+                  className={cn(
+                    "relative backdrop-blur-xl bg-slate-800/40 border-2 group-hover:bg-slate-800/60 transition-all duration-500",
+                    feature.border
+                  )}
+                >
+                  <div className="text-center space-y-6">
+                    <div className="relative">
+                      <div className={cn(
+                        "w-20 h-20 rounded-3xl flex items-center justify-center mx-auto text-3xl bg-gradient-to-br transition-all duration-500 group-hover:scale-110 group-hover:rotate-3",
+                        feature.accent
+                      )}>
+                        <div className="absolute inset-0 bg-white/10 rounded-3xl backdrop-blur-sm"></div>
+                        <span className="relative z-10">{feature.icon}</span>
+                      </div>
+                      {/* ホログラフィック効果 */}
+                      <div className={cn(
+                        "absolute -inset-2 bg-gradient-to-r opacity-0 rounded-3xl blur-md transition-opacity duration-500 group-hover:opacity-30",
+                        feature.accent
+                      )} />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-200 group-hover:text-white transition-colors duration-300">
+                      {feature.title}
+                    </h3>
+                    <p className="text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors duration-300">
+                      {feature.description}
+                    </p>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-800">{feature.title}</h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    {feature.description}
-                  </p>
-                </div>
-              </Card>
+                </Card>
+              </div>
             ))}
           </div>
 
           {/* 追加機能 */}
-          <div className="grid md:grid-cols-2 gap-8 mb-16">
-            <Card variant="elevated" className="bg-gradient-to-br from-purple-50 to-pink-50 border-0">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center text-xl">
-                  ♿
+          <div className="grid md:grid-cols-2 gap-8 mb-20">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-3xl blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-500" />
+              <Card variant="elevated" className="relative backdrop-blur-xl bg-slate-800/40 border border-green-500/30 group-hover:bg-slate-800/60 transition-all duration-500">
+                <div className="flex items-center space-x-6">
+                  <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center text-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <div className="absolute inset-0 bg-white/10 rounded-2xl backdrop-blur-sm"></div>
+                    <span className="relative z-10">♿</span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-slate-200 group-hover:text-white transition-colors duration-300">
+                      ニューラルアクセシビリティ解析
+                    </h3>
+                    <p className="text-slate-400 group-hover:text-slate-300 transition-colors duration-300">
+                      WCAG 2.1ガイドラインをAIが自動解析
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-800">アクセシビリティ監査</h3>
-                  <p className="text-gray-600">WCAG 2.1ガイドラインに基づく詳細チェック</p>
-                </div>
-              </div>
-            </Card>
+              </Card>
+            </div>
 
-            <Card variant="elevated" className="bg-gradient-to-br from-yellow-50 to-orange-50 border-0">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-yellow-100 text-yellow-600 rounded-xl flex items-center justify-center text-xl">
-                  📱
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-400/20 to-yellow-500/20 rounded-3xl blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-500" />
+              <Card variant="elevated" className="relative backdrop-blur-xl bg-slate-800/40 border border-orange-500/30 group-hover:bg-slate-800/60 transition-all duration-500">
+                <div className="flex items-center space-x-6">
+                  <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-yellow-500 rounded-2xl flex items-center justify-center text-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <div className="absolute inset-0 bg-white/10 rounded-2xl backdrop-blur-sm"></div>
+                    <span className="relative z-10">📱</span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-slate-200 group-hover:text-white transition-colors duration-300">
+                      モバイルファースト解析
+                    </h3>
+                    <p className="text-slate-400 group-hover:text-slate-300 transition-colors duration-300">
+                      次世代レスポンシブ設計評価システム
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-800">モバイル対応度</h3>
-                  <p className="text-gray-600">レスポンシブデザインとモバイルユーザビリティ</p>
-                </div>
-              </div>
-            </Card>
+              </Card>
+            </div>
           </div>
 
           {/* アクションエリア */}
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
             <Link to="/history">
-              <Button variant="outline" size="lg" className="h-12">
-                <span className="mr-2">📊</span>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="h-14 px-8 border-2 border-slate-600/50 bg-slate-800/40 text-slate-200 hover:bg-slate-700/50 hover:border-cyan-500/50 transition-all duration-300 backdrop-blur-sm"
+              >
+                <span className="mr-3 text-cyan-400">📊</span>
                 分析履歴を見る
               </Button>
             </Link>
             
             <Link to="/about">
-              <Button variant="ghost" size="lg" className="h-12">
-                <span className="mr-2">ℹ️</span>
+              <Button 
+                variant="ghost" 
+                size="lg" 
+                className="h-14 px-8 text-slate-300 hover:text-slate-100 hover:bg-slate-700/30 transition-all duration-300"
+              >
+                <span className="mr-3 text-purple-400">ℹ️</span>
                 詳細情報
               </Button>
             </Link>

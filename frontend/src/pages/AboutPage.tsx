@@ -77,42 +77,92 @@ const AboutPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+      {/* 近未来的背景装飾 */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_50%)] -z-10" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(168,85,247,0.1),transparent_50%)] -z-10" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(34,197,94,0.1),transparent_50%)] -z-10" />
+      
+      {/* アニメーション背景要素 */}
+      <div className="absolute top-20 right-20 w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
+      <div className="absolute top-40 left-20 w-1 h-1 bg-purple-400 rounded-full animate-ping" />
+      <div className="absolute bottom-40 right-40 w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative">
         {/* ヒーローセクション */}
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            {ja.app.title}について
+        <div className="text-center mb-20">
+          <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 backdrop-blur-sm border border-cyan-400/30 rounded-2xl text-sm font-medium mb-10">
+            <div className="w-2 h-2 bg-gradient-to-r from-cyan-400 to-purple-400 rounded-full mr-3 animate-ping"></div>
+            <span className="bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent font-semibold">
+              次世代ウェブ解析プラットフォーム
+            </span>
+          </div>
+          
+          <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-none tracking-tight">
+            <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+              Toneya
+            </span>
+            <br />
+            <span className="bg-gradient-to-r from-slate-200 via-slate-300 to-slate-400 bg-clip-text text-transparent">
+              Website Analyzer
+            </span>
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-            ウェブサイトの健全性を総合的に分析し、SEO、パフォーマンス、セキュリティ、
-            アクセシビリティの向上を支援するツールです。
+          
+          <p className="text-xl text-slate-300 max-w-4xl mx-auto mb-8 leading-relaxed">
+            AI技術と量子計算を駆使したウェブサイト総合分析システム。
+            SEO、パフォーマンス、セキュリティ、アクセシビリティを統合的に評価し、
+            デジタル体験の新たな次元を切り開きます。
           </p>
+          
           <Link to="/">
-            <Button size="lg">
+            <Button 
+              size="lg" 
+              className="h-14 px-8 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 border-0 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+            >
+              <span className="mr-3">⚡</span>
               今すぐ分析を開始
             </Button>
           </Link>
         </div>
 
         {/* 機能詳細 */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
-            主な機能
-          </h2>
+        <div className="mb-20">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold bg-gradient-to-r from-slate-200 to-slate-400 bg-clip-text text-transparent mb-4">
+              革新的分析機能
+            </h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">
+              最先端のAI技術が可能にする、従来の枠を超えたウェブサイト解析
+            </p>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <Card key={index} className="h-full">
-                <div className="text-center">
-                  <div className="text-4xl mb-4">{feature.icon}</div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">
-                    {feature.description}
-                  </p>
-                </div>
-              </Card>
+              <div key={index} className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-blue-500/20 to-purple-500/20 rounded-3xl blur-xl opacity-30 group-hover:opacity-60 transition-opacity duration-500" />
+                <Card 
+                  variant="elevated" 
+                  hoverable 
+                  className="relative h-full backdrop-blur-xl bg-slate-800/40 border border-slate-700/50 group-hover:bg-slate-800/60 transition-all duration-500"
+                >
+                  <div className="text-center space-y-6">
+                    <div className="relative">
+                      <div className="w-20 h-20 bg-gradient-to-br from-cyan-400 to-purple-500 rounded-3xl flex items-center justify-center mx-auto text-3xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3">
+                        <div className="absolute inset-0 bg-white/10 rounded-3xl backdrop-blur-sm"></div>
+                        <span className="relative z-10">{feature.icon}</span>
+                      </div>
+                      {/* ホログラフィック効果 */}
+                      <div className="absolute -inset-2 bg-gradient-to-r from-cyan-400 to-purple-500 opacity-0 rounded-3xl blur-md transition-opacity duration-500 group-hover:opacity-20" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-200 group-hover:text-white transition-colors duration-300">
+                      {feature.title}
+                    </h3>
+                    <p className="text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors duration-300">
+                      {feature.description}
+                    </p>
+                  </div>
+                </Card>
+              </div>
             ))}
           </div>
         </div>
@@ -266,19 +316,34 @@ const AboutPage: React.FC = () => {
 
         {/* CTA */}
         <div className="text-center">
-          <Card className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
-            <h2 className="text-2xl font-bold mb-4">
-              今すぐウェブサイトを分析してみましょう
-            </h2>
-            <p className="text-blue-100 mb-6">
-              無料で包括的な分析レポートを取得できます
-            </p>
-            <Link to="/">
-              <Button variant="secondary" size="lg">
-                分析を開始する
-              </Button>
-            </Link>
-          </Card>
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/30 via-blue-500/30 to-purple-500/30 rounded-3xl blur-2xl"></div>
+            <Card 
+              variant="elevated" 
+              className="relative backdrop-blur-xl bg-slate-800/60 border border-slate-700/50 shadow-2xl"
+            >
+              <div className="text-center space-y-6">
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
+                  未来のウェブ解析を今すぐ体験
+                </h2>
+                <p className="text-slate-300 max-w-2xl mx-auto leading-relaxed">
+                  Toneya Website Analyzerで、あなたのウェブサイトの真の可能性を発見してください。
+                  AI駆動の包括的分析が、新たなデジタル体験の扉を開きます。
+                </p>
+                <div className="flex justify-center space-x-4 pt-4">
+                  <Link to="/">
+                    <Button 
+                      size="lg" 
+                      className="h-14 px-8 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 border-0 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                    >
+                      <span className="mr-3">🚀</span>
+                      分析を開始する
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
