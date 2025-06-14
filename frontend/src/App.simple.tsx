@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import HomePage from './pages/HomePage.simple';
 import AnalysisPage from './pages/AnalysisPage.simple';
-import HistoryPage from './pages/HistoryPage';
+import HistoryPage from './pages/HistoryPage.simple';
 import AboutPage from './pages/AboutPage';
 
 function App() {

@@ -1,87 +1,175 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-interface AnalysisHistory {
+interface SimpleAnalysis {
   id: string;
   url: string;
-  status: 'completed' | 'processing' | 'failed';
+  status: string;
   startedAt: string;
   score?: number;
 }
 
-const HistoryPage: React.FC = () => {
-  const [history, setHistory] = useState<AnalysisHistory[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+const HistoryPageSimple: React.FC = () => {
+  const [analyses, setAnalyses] = useState<SimpleAnalysis[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const response = await fetch('/api/analysis/history');
-        const data = await response.json();
-        
-        if (data.success) {
-          const analysisHistory = data.data.analyses.map((analysis: any) => ({
-            id: analysis.id,
-            url: analysis.url,
-            status: analysis.status,
-            startedAt: analysis.startedAt,
-            score: analysis.results?.overall?.score
-          }));
-          setHistory(analysisHistory);
-        } else {
-          console.error('Failed to fetch history:', data.error);
-          // フォールバック：ローカルストレージから取得
-          const savedHistory = localStorage.getItem('analysisHistory');
-          const mockHistory: AnalysisHistory[] = savedHistory ? JSON.parse(savedHistory) : [];
-          setHistory(mockHistory);
-        }
-      } catch (error) {
-        console.error('History fetch error:', error);
-        // エラーの場合はモックデータを表示
-        const mockHistory: AnalysisHistory[] = [
-          {
-            id: 'analysis-1749637846929',
-            url: 'https://example.com',
-            status: 'completed',
-            startedAt: new Date(Date.now() - 3600000).toISOString(),
-            score: 85
-          },
-          {
-            id: 'analysis-1749636000000',
-            url: 'https://google.com',
-            status: 'completed',
-            startedAt: new Date(Date.now() - 7200000).toISOString(),
-            score: 92
-          }
-        ];
-        setHistory(mockHistory);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchHistory();
+    loadHistory();
   }, []);
+
+  const loadHistory = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log('履歴取得開始...');
+      
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://website-analyzer-production-c933.up.railway.app';
+      console.log('API Base URL:', API_BASE_URL);
+      
+      const response = await fetch(`${API_BASE_URL}/api/analysis/history?page=1&limit=20`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('API Response status:', response.status);
+      console.log('API Response headers:', response.headers);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('API Response data:', data);
+      
+      if (data.success && data.analyses) {
+        setAnalyses(data.analyses);
+      } else {
+        setAnalyses([]);
+      }
+      
+    } catch (err: any) {
+      console.error('履歴取得エラー:', err);
+      setError(err.message || '履歴の取得に失敗しました');
+      
+      // フォールバック: サンプルデータを表示
+      setAnalyses([
+        {
+          id: 'sample-1',
+          url: 'https://example.com',
+          status: 'completed',
+          startedAt: new Date().toISOString(),
+          score: 85
+        },
+        {
+          id: 'sample-2',
+          url: 'https://google.com',
+          status: 'completed',
+          startedAt: new Date(Date.now() - 86400000).toISOString(),
+          score: 92
+        }
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownloadPDF = async (id: string) => {
+    try {
+      console.log('PDF ダウンロード開始:', id);
+      
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://website-analyzer-production-c933.up.railway.app';
+      const response = await fetch(`${API_BASE_URL}/api/analysis/${id}/pdf`);
+      
+      console.log('PDF Response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`PDF生成エラー: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      console.log('PDF Blob size:', blob.size);
+      
+      if (blob.size === 0) {
+        throw new Error('PDFファイルが空です');
+      }
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `analysis-${id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      alert('PDFダウンロード完了');
+      
+    } catch (err: any) {
+      console.error('PDF ダウンロードエラー:', err);
+      alert(`PDFダウンロード失敗: ${err.message}`);
+    }
+  };
+
+  const handleDownloadCSV = async (id: string) => {
+    try {
+      console.log('CSV ダウンロード開始:', id);
+      
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://website-analyzer-production-c933.up.railway.app';
+      const response = await fetch(`${API_BASE_URL}/api/analysis/${id}/csv`);
+      
+      console.log('CSV Response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`CSV生成エラー: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      console.log('CSV Blob size:', blob.size);
+      
+      if (blob.size === 0) {
+        throw new Error('CSVファイルが空です');
+      }
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `analysis-${id}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      alert('CSVダウンロード完了');
+      
+    } catch (err: any) {
+      console.error('CSV ダウンロードエラー:', err);
+      alert(`CSVダウンロード失敗: ${err.message}`);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">完了</span>;
+        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-500/20 text-green-400 border border-green-500/30">完了</span>;
       case 'processing':
-        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">処理中</span>;
+        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">処理中</span>;
       case 'failed':
-        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">失敗</span>;
+        return <span className="px-3 py-1 text-xs font-semibold rounded-full bg-red-500/20 text-red-400 border border-red-500/30">失敗</span>;
       default:
         return null;
     }
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-green-600';
-    if (score >= 80) return 'text-blue-600';
-    if (score >= 70) return 'text-yellow-600';
-    if (score >= 60) return 'text-orange-600';
-    return 'text-red-600';
+    if (score >= 90) return 'text-green-400';
+    if (score >= 80) return 'text-cyan-400';
+    if (score >= 70) return 'text-yellow-400';
+    if (score >= 60) return 'text-orange-400';
+    return 'text-red-400';
   };
 
   const formatDate = (dateString: string) => {
@@ -106,27 +194,32 @@ const HistoryPage: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 mb-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-2 border-cyan-500/30 border-t-cyan-400"></div>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900">履歴を読み込み中...</h2>
+          <h2 className="text-xl font-semibold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">履歴を読み込み中...</h2>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* ヘッダー */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4">
+      <div className="bg-slate-900/80 backdrop-blur-xl shadow-xl border-b border-slate-700/50">
+        <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">分析履歴</h1>
-            <Link to="/" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+              分析履歴
+            </h1>
+            <Link 
+              to="/" 
+              className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-cyan-500 hover:to-blue-500 transition-all duration-300 shadow-lg hover:shadow-cyan-500/25 font-medium"
+            >
               新しい分析
             </Link>
           </div>
@@ -135,44 +228,59 @@ const HistoryPage: React.FC = () => {
 
       {/* メインコンテンツ */}
       <div className="container mx-auto px-4 py-8">
-        {history.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <div className="text-gray-400 text-5xl mb-4">📊</div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">まだ分析履歴がありません</h2>
-            <p className="text-gray-600 mb-6">ウェブサイトの分析を開始してください</p>
-            <Link to="/" className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700">
+        {error && (
+          <div className="mb-6 p-4 bg-red-900/30 border border-red-500/50 rounded-xl text-red-300">
+            エラー: {error} (フォールバックデータを表示中)
+          </div>
+        )}
+
+        {analyses.length === 0 ? (
+          <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-12 text-center shadow-2xl">
+            <div className="text-6xl mb-6">
+              <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">📊</span>
+            </div>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-slate-200 to-slate-400 bg-clip-text text-transparent mb-3">
+              まだ分析履歴がありません
+            </h2>
+            <p className="text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">
+              ウェブサイトの分析を開始して、パフォーマンス、セキュリティ、アクセシビリティを解析しましょう
+            </p>
+            <Link 
+              to="/" 
+              className="inline-flex items-center bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-8 py-4 rounded-xl hover:from-cyan-500 hover:to-blue-500 transition-all duration-300 shadow-lg hover:shadow-cyan-500/25 font-medium text-lg"
+            >
               分析を開始
             </Link>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden shadow-2xl">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-slate-700/50">
+                <thead className="bg-slate-900/60">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
                       URL
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
                       ステータス
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
                       スコア
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
                       分析日時
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
                       アクション
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {history.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
+                <tbody className="bg-slate-800/30 divide-y divide-slate-700/30">
+                  {analyses.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-700/30 transition-all duration-200">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{item.url}</div>
-                        <div className="text-xs text-gray-500">ID: {item.id}</div>
+                        <div className="text-sm font-medium text-slate-200">{item.url}</div>
+                        <div className="text-xs text-slate-400">ID: {item.id}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(item.status)}
@@ -183,26 +291,40 @@ const HistoryPage: React.FC = () => {
                             {item.score}
                           </span>
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <span className="text-slate-400">-</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                         {formatDate(item.startedAt)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                         {item.status === 'completed' ? (
-                          <Link
-                            to={`/analysis/${item.id}`}
-                            className="text-blue-600 hover:text-blue-900 mr-4"
-                          >
-                            詳細を見る
-                          </Link>
+                          <>
+                            <Link
+                              to={`/analysis/${item.id}`}
+                              className="text-cyan-400 hover:text-cyan-300 transition-colors duration-200"
+                            >
+                              詳細を見る
+                            </Link>
+                            <button
+                              onClick={() => handleDownloadPDF(item.id)}
+                              className="text-green-400 hover:text-green-300 transition-colors duration-200"
+                            >
+                              PDF
+                            </button>
+                            <button
+                              onClick={() => handleDownloadCSV(item.id)}
+                              className="text-purple-400 hover:text-purple-300 transition-colors duration-200"
+                            >
+                              CSV
+                            </button>
+                          </>
                         ) : item.status === 'processing' ? (
-                          <span className="text-gray-400">処理中...</span>
+                          <span className="text-slate-400">処理中...</span>
                         ) : (
                           <button
                             onClick={() => alert('再分析機能は開発中です')}
-                            className="text-orange-600 hover:text-orange-900"
+                            className="text-orange-400 hover:text-orange-300 transition-colors duration-200"
                           >
                             再分析
                           </button>
@@ -217,33 +339,35 @@ const HistoryPage: React.FC = () => {
         )}
 
         {/* 統計情報 */}
-        {history.length > 0 && (
+        {analyses.length > 0 && (
           <div className="mt-8 grid md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="text-sm text-gray-600">総分析数</div>
-              <div className="text-2xl font-bold text-gray-900">{history.length}</div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="text-sm text-gray-600">成功率</div>
-              <div className="text-2xl font-bold text-green-600">
-                {Math.round((history.filter(h => h.status === 'completed').length / history.length) * 100)}%
+            <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-xl p-6 shadow-xl">
+              <div className="text-sm text-slate-400 mb-2">総分析数</div>
+              <div className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                {analyses.length}
               </div>
             </div>
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="text-sm text-gray-600">平均スコア</div>
-              <div className="text-2xl font-bold text-blue-600">
-                {Math.round(
-                  history
+            <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-xl p-6 shadow-xl">
+              <div className="text-sm text-slate-400 mb-2">成功率</div>
+              <div className="text-3xl font-bold text-green-400">
+                {Math.round((analyses.filter(h => h.status === 'completed').length / analyses.length) * 100)}%
+              </div>
+            </div>
+            <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-xl p-6 shadow-xl">
+              <div className="text-sm text-slate-400 mb-2">平均スコア</div>
+              <div className="text-3xl font-bold text-blue-400">
+                {analyses.filter(h => h.score).length > 0 ? Math.round(
+                  analyses
                     .filter(h => h.score)
                     .reduce((sum, h) => sum + (h.score || 0), 0) / 
-                  history.filter(h => h.score).length
-                )}
+                  analyses.filter(h => h.score).length
+                ) : 0}
               </div>
             </div>
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="text-sm text-gray-600">最新分析</div>
-              <div className="text-sm font-medium text-gray-900">
-                {formatDate(history[0].startedAt)}
+            <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-xl p-6 shadow-xl">
+              <div className="text-sm text-slate-400 mb-2">最新分析</div>
+              <div className="text-sm font-medium text-slate-200">
+                {formatDate(analyses[0].startedAt)}
               </div>
             </div>
           </div>
@@ -253,4 +377,4 @@ const HistoryPage: React.FC = () => {
   );
 };
 
-export default HistoryPage;
+export default HistoryPageSimple;

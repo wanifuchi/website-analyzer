@@ -10,7 +10,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5分
-      cacheTime: 10 * 60 * 1000, // 10分
+      gcTime: 10 * 60 * 1000, // 10分 (React Query v5では cacheTime → gcTime)
       retry: 1,
       refetchOnWindowFocus: false,
     },

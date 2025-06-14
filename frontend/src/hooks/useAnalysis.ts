@@ -25,8 +25,8 @@ export const useAnalysis = (id: string | null, enabled = true) => {
     queryKey: ['analysis', id],
     queryFn: () => analysisApi.getAnalysis(id!),
     enabled: enabled && !!id,
-    refetchInterval: (data) => {
-      if (data?.status === 'processing' || data?.status === 'pending') {
+    refetchInterval: (query) => {
+      if (query.state.data?.status === 'processing' || query.state.data?.status === 'pending') {
         return 2000; // 2秒間隔でポーリング
       }
       return false;
@@ -41,8 +41,8 @@ export const useAnalysisStatus = (id: string | null, enabled = true) => {
     queryKey: ['analysis', 'status', id],
     queryFn: () => analysisApi.getAnalysisStatus(id!),
     enabled: enabled && !!id,
-    refetchInterval: (data) => {
-      if (data?.status === 'processing' || data?.status === 'pending') {
+    refetchInterval: (query) => {
+      if (query.state.data?.status === 'processing' || query.state.data?.status === 'pending') {
         return 1000; // 1秒間隔でポーリング
       }
       return false;
