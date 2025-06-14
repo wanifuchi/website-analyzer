@@ -16,6 +16,7 @@ const AnalysisPage: React.FC = () => {
   const [downloading, setDownloading] = useState<string | null>(null);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [progress, setProgress] = useState<AnalysisProgress | null>(null);
+  const [pageSpeedLoading, setPageSpeedLoading] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchAnalysisResult = async () => {
@@ -116,24 +117,31 @@ const AnalysisPage: React.FC = () => {
     // PageSpeedデータの補完取得
     const fetchPageSpeedDataFallback = async (url: string) => {
       try {
+        setPageSpeedLoading(true);
         console.log('🚀 PageSpeedデータ補完取得開始:', url);
         const pageSpeedData = await pageSpeedService.analyzeUrl(url);
         
-        if (pageSpeedData && analysisData) {
+        if (pageSpeedData) {
           // 既存の分析データにPageSpeedデータを追加
-          const updatedAnalysisData = {
-            ...analysisData,
-            results: {
-              ...analysisData.results,
-              pageSpeed: pageSpeedData
-            }
-          };
-          
-          console.log('✅ PageSpeedデータ補完完了');
-          setAnalysisData(updatedAnalysisData);
+          setAnalysisData(prevData => {
+            if (!prevData) return prevData;
+            
+            const updatedData = {
+              ...prevData,
+              results: {
+                ...prevData.results,
+                pageSpeed: pageSpeedData
+              }
+            };
+            
+            console.log('✅ PageSpeedデータ補完完了:', updatedData.results.pageSpeed);
+            return updatedData;
+          });
         }
       } catch (error) {
         console.error('❌ PageSpeedデータ補完エラー:', error);
+      } finally {
+        setPageSpeedLoading(false);
       }
     };
     
@@ -730,8 +738,22 @@ const AnalysisPage: React.FC = () => {
           )}
         </div>
 
+        {/* PageSpeed補完中の表示 */}
+        {pageSpeedLoading && (
+          <div className="mt-8 bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center">
+              <span className="mr-2">🚀</span>
+              Core Web Vitals（リアルタイム測定中...）
+            </h3>
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+              <span className="text-gray-600">PageSpeedデータを取得中...</span>
+            </div>
+          </div>
+        )}
+
         {/* Core Web Vitals */}
-        {analysisData.results.pageSpeed && analysisData.results.pageSpeed.mobile.coreWebVitals && (
+        {!pageSpeedLoading && analysisData.results.pageSpeed && analysisData.results.pageSpeed.mobile && analysisData.results.pageSpeed.mobile.coreWebVitals && (
           <div className="mt-8 bg-white rounded-lg shadow-md p-6">
             <h3 className="text-lg font-semibold mb-4 flex items-center">
               <span className="mr-2">🚀</span>
