@@ -13,10 +13,34 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(helmet());
+// CORS設定 - より包括的に設定
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://yourdomain.com'] 
-    : ['http://localhost:3000'],
+  origin: (origin, callback) => {
+    // 開発環境では全てのオリジンを許可
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    // 本番環境では特定のドメインのみ許可
+    const allowedOrigins = [
+      'https://website-analyzer-frontend.vercel.app',
+      'https://toneya-analysis-v1-frontend.vercel.app'
+    ];
+    
+    // オリジンが存在しない場合（直接API呼び出し）も許可
+    if (!origin) return callback(null, true);
+    
+    // Vercelのプレビュードメインも許可
+    if (origin.includes('.vercel.app')) {
+      return callback(null, true);
+    }
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
 app.use(compression());
