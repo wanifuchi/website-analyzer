@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { pageSpeedService } from '../services/pageSpeedService';
 import { getCoreWebVitalEvaluation, getColorClasses } from '../utils/coreWebVitalsEvaluator';
+import MetricCard from '../components/MetricCard';
 
 interface AnalysisProgress {
   currentStep: string;
@@ -787,28 +788,18 @@ const AnalysisPage: React.FC = () => {
               {/* LCP */}
               {(() => {
                 const lcpEval = getCoreWebVitalEvaluation('lcp', analysisData.results.pageSpeed.mobile.coreWebVitals.lcp.value, analysisData.results.pageSpeed.mobile.coreWebVitals.lcp.score);
-                const colorClasses = getColorClasses(lcpEval.color);
                 return (
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-900">LCP</h4>
-                      <span className={`w-3 h-3 rounded-full ${colorClasses.indicator}`}></span>
-                    </div>
-                    <p className="text-2xl font-bold text-blue-700">
-                      {analysisData.results.pageSpeed.mobile.coreWebVitals.lcp.displayValue}
-                    </p>
-                    <div className="mt-2 pt-2 border-t border-blue-200">
-                      <p className={`text-xs font-semibold ${colorClasses.text}`}>
-                        {lcpEval.evaluation}
-                      </p>
-                      <p className="text-xs text-gray-600 mt-1">
-                        🎯 {lcpEval.target}
-                      </p>
-                      <p className="text-xs text-gray-700 mt-1">
-                        💡 {lcpEval.advice}
-                      </p>
-                    </div>
-                  </div>
+                  <MetricCard
+                    metric="LCP"
+                    value={analysisData.results.pageSpeed.mobile.coreWebVitals.lcp.displayValue}
+                    evaluation={lcpEval.evaluation}
+                    target={lcpEval.target}
+                    advice={lcpEval.advice}
+                    score={analysisData.results.pageSpeed.mobile.coreWebVitals.lcp.score}
+                    bgColor="from-blue-50 to-blue-100"
+                    textColor="text-blue-700"
+                    borderColor="border-blue-200"
+                  />
                 );
               })()}
 
@@ -816,26 +807,17 @@ const AnalysisPage: React.FC = () => {
               {(() => {
                 const tbtEval = getCoreWebVitalEvaluation('tbt', analysisData.results.pageSpeed.mobile.coreWebVitals.tbt.value, analysisData.results.pageSpeed.mobile.coreWebVitals.tbt.score);
                 return (
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-900">TBT</h4>
-                      <span className={`w-3 h-3 rounded-full bg-${tbtEval.color}-500`}></span>
-                    </div>
-                    <p className="text-2xl font-bold text-green-700">
-                      {analysisData.results.pageSpeed.mobile.coreWebVitals.tbt.displayValue}
-                    </p>
-                    <div className="mt-2 pt-2 border-t border-green-200">
-                      <p className={`text-xs font-semibold text-${tbtEval.color}-700`}>
-                        {tbtEval.evaluation}
-                      </p>
-                      <p className="text-xs text-gray-600 mt-1">
-                        🎯 {tbtEval.target}
-                      </p>
-                      <p className="text-xs text-gray-700 mt-1">
-                        💡 {tbtEval.advice}
-                      </p>
-                    </div>
-                  </div>
+                  <MetricCard
+                    metric="TBT"
+                    value={analysisData.results.pageSpeed.mobile.coreWebVitals.tbt.displayValue}
+                    evaluation={tbtEval.evaluation}
+                    target={tbtEval.target}
+                    advice={tbtEval.advice}
+                    score={analysisData.results.pageSpeed.mobile.coreWebVitals.tbt.score}
+                    bgColor="from-green-50 to-green-100"
+                    textColor="text-green-700"
+                    borderColor="border-green-200"
+                  />
                 );
               })()}
 
@@ -843,26 +825,17 @@ const AnalysisPage: React.FC = () => {
               {(() => {
                 const clsEval = getCoreWebVitalEvaluation('cls', analysisData.results.pageSpeed.mobile.coreWebVitals.cls.value, analysisData.results.pageSpeed.mobile.coreWebVitals.cls.score);
                 return (
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-900">CLS</h4>
-                      <span className={`w-3 h-3 rounded-full bg-${clsEval.color}-500`}></span>
-                    </div>
-                    <p className="text-2xl font-bold text-purple-700">
-                      {analysisData.results.pageSpeed.mobile.coreWebVitals.cls.displayValue}
-                    </p>
-                    <div className="mt-2 pt-2 border-t border-purple-200">
-                      <p className={`text-xs font-semibold text-${clsEval.color}-700`}>
-                        {clsEval.evaluation}
-                      </p>
-                      <p className="text-xs text-gray-600 mt-1">
-                        🎯 {clsEval.target}
-                      </p>
-                      <p className="text-xs text-gray-700 mt-1">
-                        💡 {clsEval.advice}
-                      </p>
-                    </div>
-                  </div>
+                  <MetricCard
+                    metric="CLS"
+                    value={analysisData.results.pageSpeed.mobile.coreWebVitals.cls.displayValue}
+                    evaluation={clsEval.evaluation}
+                    target={clsEval.target}
+                    advice={clsEval.advice}
+                    score={analysisData.results.pageSpeed.mobile.coreWebVitals.cls.score}
+                    bgColor="from-purple-50 to-purple-100"
+                    textColor="text-purple-700"
+                    borderColor="border-purple-200"
+                  />
                 );
               })()}
 
@@ -870,26 +843,17 @@ const AnalysisPage: React.FC = () => {
               {(() => {
                 const fcpEval = getCoreWebVitalEvaluation('fcp', analysisData.results.pageSpeed.mobile.coreWebVitals.fcp.value, analysisData.results.pageSpeed.mobile.coreWebVitals.fcp.score);
                 return (
-                  <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-900">FCP</h4>
-                      <span className={`w-3 h-3 rounded-full bg-${fcpEval.color}-500`}></span>
-                    </div>
-                    <p className="text-2xl font-bold text-yellow-700">
-                      {analysisData.results.pageSpeed.mobile.coreWebVitals.fcp.displayValue}
-                    </p>
-                    <div className="mt-2 pt-2 border-t border-yellow-200">
-                      <p className={`text-xs font-semibold text-${fcpEval.color}-700`}>
-                        {fcpEval.evaluation}
-                      </p>
-                      <p className="text-xs text-gray-600 mt-1">
-                        🎯 {fcpEval.target}
-                      </p>
-                      <p className="text-xs text-gray-700 mt-1">
-                        💡 {fcpEval.advice}
-                      </p>
-                    </div>
-                  </div>
+                  <MetricCard
+                    metric="FCP"
+                    value={analysisData.results.pageSpeed.mobile.coreWebVitals.fcp.displayValue}
+                    evaluation={fcpEval.evaluation}
+                    target={fcpEval.target}
+                    advice={fcpEval.advice}
+                    score={analysisData.results.pageSpeed.mobile.coreWebVitals.fcp.score}
+                    bgColor="from-yellow-50 to-yellow-100"
+                    textColor="text-yellow-700"
+                    borderColor="border-yellow-200"
+                  />
                 );
               })()}
 
@@ -916,26 +880,17 @@ const AnalysisPage: React.FC = () => {
               {(() => {
                 const ttfbEval = getCoreWebVitalEvaluation('ttfb', analysisData.results.pageSpeed.mobile.coreWebVitals.ttfb.value, analysisData.results.pageSpeed.mobile.coreWebVitals.ttfb.score);
                 return (
-                  <div className="bg-gradient-to-br from-rose-50 to-rose-100 p-4 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-900">TTFB</h4>
-                      <span className={`w-3 h-3 rounded-full bg-${ttfbEval.color}-500`}></span>
-                    </div>
-                    <p className="text-2xl font-bold text-rose-700">
-                      {analysisData.results.pageSpeed.mobile.coreWebVitals.ttfb.displayValue}
-                    </p>
-                    <div className="mt-2 pt-2 border-t border-rose-200">
-                      <p className={`text-xs font-semibold text-${ttfbEval.color}-700`}>
-                        {ttfbEval.evaluation}
-                      </p>
-                      <p className="text-xs text-gray-600 mt-1">
-                        🎯 {ttfbEval.target}
-                      </p>
-                      <p className="text-xs text-gray-700 mt-1">
-                        💡 {ttfbEval.advice}
-                      </p>
-                    </div>
-                  </div>
+                  <MetricCard
+                    metric="TTFB"
+                    value={analysisData.results.pageSpeed.mobile.coreWebVitals.ttfb.displayValue}
+                    evaluation={ttfbEval.evaluation}
+                    target={ttfbEval.target}
+                    advice={ttfbEval.advice}
+                    score={analysisData.results.pageSpeed.mobile.coreWebVitals.ttfb.score}
+                    bgColor="from-rose-50 to-rose-100"
+                    textColor="text-rose-700"
+                    borderColor="border-rose-200"
+                  />
                 );
               })()}
             </div>
