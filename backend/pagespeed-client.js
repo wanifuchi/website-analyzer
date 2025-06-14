@@ -6,7 +6,8 @@ const axios = require('axios');
  */
 class PageSpeedInsightsClient {
   constructor() {
-    this.apiKey = process.env.GOOGLE_PAGESPEED_API_KEY;
+    // 環境変数またはフォールバックAPIキー
+    this.apiKey = process.env.GOOGLE_PAGESPEED_API_KEY || 'AIzaSyA8vephT8p5sPAuOXmjY1mED8ot00HkzUk';
     this.endpoint = process.env.PAGESPEED_API_ENDPOINT || 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
     this.timeout = 60000; // 60秒タイムアウト
     
@@ -14,7 +15,8 @@ class PageSpeedInsightsClient {
       hasApiKey: !!this.apiKey,
       apiKeyLength: this.apiKey ? this.apiKey.length : 0,
       apiKeyPrefix: this.apiKey ? this.apiKey.substring(0, 10) + '...' : 'null',
-      endpoint: this.endpoint
+      endpoint: this.endpoint,
+      envApiKey: !!process.env.GOOGLE_PAGESPEED_API_KEY
     });
     
     if (!this.apiKey) {
