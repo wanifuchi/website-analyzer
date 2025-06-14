@@ -10,6 +10,13 @@ class PageSpeedInsightsClient {
     this.endpoint = process.env.PAGESPEED_API_ENDPOINT || 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
     this.timeout = 60000; // 60秒タイムアウト
     
+    console.log('🔍 PageSpeedInsightsClient Constructor:', {
+      hasApiKey: !!this.apiKey,
+      apiKeyLength: this.apiKey ? this.apiKey.length : 0,
+      apiKeyPrefix: this.apiKey ? this.apiKey.substring(0, 10) + '...' : 'null',
+      endpoint: this.endpoint
+    });
+    
     if (!this.apiKey) {
       console.warn('⚠️ Google PageSpeed Insights API キーが設定されていません。フォールバック機能を使用します。');
     }
