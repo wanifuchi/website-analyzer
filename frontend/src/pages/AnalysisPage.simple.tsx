@@ -96,7 +96,11 @@ const AnalysisPage: React.FC = () => {
             performance: {
               score: 82,
               loadTime: 2.3,
-              firstContentfulPaint: 1.2
+              firstContentfulPaint: 1.2,
+              issues: [
+                { type: 'warning', message: '画像の最適化が必要です' },
+                { type: 'info', message: 'CSSファイルの圧縮を推奨します' }
+              ]
             },
             security: {
               score: 90,
@@ -106,12 +110,20 @@ const AnalysisPage: React.FC = () => {
             accessibility: {
               score: 78,
               wcagLevel: 'AA',
-              violations: 3
+              violations: 3,
+              issues: [
+                { type: 'error', message: 'alt属性が不足している画像があります' },
+                { type: 'warning', message: 'コントラスト比が低い要素があります' }
+              ]
             },
             mobile: {
               score: 92,
               isResponsive: true,
-              hasViewportMeta: true
+              hasViewportMeta: true,
+              touchTargetSize: true,
+              issues: [
+                { type: 'info', message: 'フォントサイズを少し大きくすることを推奨します' }
+              ]
             }
           }
         };
@@ -637,8 +649,9 @@ const AnalysisPage: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <p>読み込み時間: {analysisData.results.performance.loadTime}秒</p>
-                  <p>FCP: {analysisData.results.performance.firstContentfulPaint}秒</p>
+                  <p>読み込み時間: {analysisData.results.performance.loadTime || '測定中'}秒</p>
+                  <p>FCP: {analysisData.results.performance.firstContentfulPaint || '測定中'}秒</p>
+                  <p>問題数: {analysisData.results.performance.issues?.length || 0}件</p>
                 </>
               )}
               <button 
@@ -704,6 +717,8 @@ const AnalysisPage: React.FC = () => {
             <div className="text-sm text-gray-600">
               <p>レスポンシブ: {analysisData.results.mobile.isResponsive ? '✅ 対応' : '❌ 未対応'}</p>
               <p>ビューポート: {analysisData.results.mobile.hasViewportMeta ? '✅ 設定済' : '❌ 未設定'}</p>
+              <p>タッチ対応: {analysisData.results.mobile.touchTargetSize ? '✅ 適切' : '❌ 要改善'}</p>
+              <p>問題数: {analysisData.results.mobile.issues?.length || 0}件</p>
               <button 
                 onClick={() => handleCategoryExpand('mobile')}
                 className="mt-2 text-blue-600 hover:text-blue-800 text-xs"

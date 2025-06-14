@@ -70,19 +70,49 @@ export const analysisApi = {
       totalPages: number;
     };
   }> => {
-    const response = await api.get<ApiResponse<{
-      analyses: Analysis[];
-      pagination: {
-        page: number;
-        limit: number;
-        total: number;
-        totalPages: number;
+    try {
+      const response = await api.get(`/api/analysis/history?page=${page}&limit=${limit}`);
+      
+      // レスポンスデータの構造確認
+      console.log('History API response:', response.data);
+      
+      if (response.data.success && response.data.analyses) {
+        // バックエンドの実際のレスポンス形式に合わせる
+        return {
+          analyses: response.data.analyses || [],
+          pagination: {
+            page: response.data.page || page,
+            limit: response.data.limit || limit,
+            total: response.data.total || 0,
+            totalPages: Math.ceil((response.data.total || 0) / limit)
+          }
+        };
+      }
+      
+      // フォールバック: 空の履歴を返す
+      return {
+        analyses: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0
+        }
       };
-    }>>(`/api/analysis/history?page=${page}&limit=${limit}`);
-    if (!response.data.success || !response.data.data) {
-      throw new Error(response.data.error || '履歴の取得に失敗しました');
+    } catch (error: any) {
+      console.error('History API error:', error);
+      
+      // エラー時もフォールバックで空の履歴を返す
+      return {
+        analyses: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0
+        }
+      };
     }
-    return response.data.data;
   },
 
   // 分析結果削除
@@ -95,18 +125,54 @@ export const analysisApi = {
 
   // PDFレポート生成
   generatePDFReport: async (id: string): Promise<Blob> => {
-    const response = await api.get(`/api/analysis/${id}/pdf`, {
-      responseType: 'blob',
-    });
-    return response.data;
+    try {
+      const response = await api.get(`/api/analysis/${id}/pdf`, {
+        responseType: 'blob',
+        timeout: 60000, // 60秒のタイムアウト
+      });
+      
+      if (!response.data || response.data.size === 0) {
+        throw new Error('PDFファイルが生成されませんでした');
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('PDF generation API error:', error);
+      if (error.response?.status === 404) {
+        throw new Error('分析結果が見つかりません');
+      } else if (error.response?.status === 400) {
+        throw new Error('分析が完了していません');
+      } else if (error.code === 'ECONNABORTED') {
+        throw new Error('PDF生成がタイムアウトしました');
+      }
+      throw new Error('PDFレポートの生成に失敗しました');
+    }
   },
 
   // CSVエクスポート
   exportCSV: async (id: string): Promise<Blob> => {
-    const response = await api.get(`/api/analysis/${id}/csv`, {
-      responseType: 'blob',
-    });
-    return response.data;
+    try {
+      const response = await api.get(`/api/analysis/${id}/csv`, {
+        responseType: 'blob',
+        timeout: 30000, // 30秒のタイムアウト
+      });
+      
+      if (!response.data || response.data.size === 0) {
+        throw new Error('CSVファイルが生成されませんでした');
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('CSV export API error:', error);
+      if (error.response?.status === 404) {
+        throw new Error('分析結果が見つかりません');
+      } else if (error.response?.status === 400) {
+        throw new Error('分析が完了していません');
+      } else if (error.code === 'ECONNABORTED') {
+        throw new Error('CSVエクスポートがタイムアウトしました');
+      }
+      throw new Error('CSVエクスポートに失敗しました');
+    }
   },
 };
 

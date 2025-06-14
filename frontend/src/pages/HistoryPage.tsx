@@ -247,7 +247,7 @@ const HistoryPage: React.FC = () => {
                 }
               </p>
               <Link to="/">
-                <Button className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500">分析を開始</Button>
+                <Button className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white px-6 py-3 rounded-xl">分析を開始</Button>
               </Link>
             </div>
           </div>

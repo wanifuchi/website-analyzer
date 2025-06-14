@@ -81,17 +81,33 @@ export const useGeneratePDFReport = () => {
   return useMutation({
     mutationFn: (id: string) => analysisApi.generatePDFReport(id),
     onSuccess: (blob, id) => {
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `website-analysis-report-${id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      toast.success('PDFレポートをダウンロードしました');
+      try {
+        if (!blob || blob.size === 0) {
+          throw new Error('PDFファイルが空です');
+        }
+        
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `website-analysis-report-${id}.pdf`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        
+        // クリーンアップを遅延実行
+        setTimeout(() => {
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        }, 100);
+        
+        toast.success('PDFレポートをダウンロードしました');
+      } catch (error) {
+        console.error('PDF download error:', error);
+        toast.error('PDFダウンロード中にエラーが発生しました');
+      }
     },
     onError: (error: Error) => {
+      console.error('PDF generation error:', error);
       toast.error(error.message || 'PDFレポートの生成に失敗しました');
     },
   });
@@ -102,17 +118,33 @@ export const useExportCSV = () => {
   return useMutation({
     mutationFn: (id: string) => analysisApi.exportCSV(id),
     onSuccess: (blob, id) => {
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `website-analysis-data-${id}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      toast.success('CSVデータをエクスポートしました');
+      try {
+        if (!blob || blob.size === 0) {
+          throw new Error('CSVファイルが空です');
+        }
+        
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `website-analysis-data-${id}.csv`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        
+        // クリーンアップを遅延実行
+        setTimeout(() => {
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        }, 100);
+        
+        toast.success('CSVデータをエクスポートしました');
+      } catch (error) {
+        console.error('CSV download error:', error);
+        toast.error('CSVダウンロード中にエラーが発生しました');
+      }
     },
     onError: (error: Error) => {
+      console.error('CSV export error:', error);
       toast.error(error.message || 'CSVエクスポートに失敗しました');
     },
   });
