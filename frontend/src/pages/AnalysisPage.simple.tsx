@@ -435,22 +435,11 @@ const AnalysisPage: React.FC = () => {
 
   const handleScreenshot = async () => {
     try {
-      // 分析結果コンテナを対象にする
-      const element = document.querySelector('.analysis-results-container') || document.body;
-      
-      // より高品質な設定でスクリーンショットを撮影
-      const canvas = await html2canvas(element as HTMLElement, {
-        backgroundColor: '#0f172a', // ダークテーマ背景
-        scale: 2, // 高解像度（2x）
+      // シンプルで確実な方法：現在の表示をそのままキャプチャ
+      const canvas = await html2canvas(document.body, {
         useCORS: true,
-        allowTaint: true,
-        scrollX: 0,
-        scrollY: 0,
-        width: window.innerWidth,
-        height: Math.max(document.documentElement.scrollHeight, window.innerHeight),
-        logging: false, // デバッグログを無効化
-        imageTimeout: 15000, // 画像読み込みタイムアウト
-        removeContainer: true
+        scale: 1,
+        logging: false
       });
       
       // 高品質JPEGとして保存（PNGより軽く、品質も良い）
