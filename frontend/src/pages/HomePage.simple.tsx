@@ -232,7 +232,7 @@ const HomePage: React.FC = () => {
                   variant="elevated" 
                   hoverable 
                   className={cn(
-                    "relative backdrop-blur-xl bg-slate-800/40 border-2 group-hover:bg-slate-800/60 transition-all duration-500",
+                    "relative backdrop-blur-xl bg-slate-800/60 border-2 group-hover:bg-slate-700/80 transition-all duration-500",
                     feature.border
                   )}
                 >
@@ -254,7 +254,7 @@ const HomePage: React.FC = () => {
                     <h3 className="text-2xl font-bold text-white group-hover:text-cyan-200 transition-colors duration-300">
                       {feature.title}
                     </h3>
-                    <p className="text-lg text-slate-100 leading-relaxed group-hover:text-white transition-colors duration-300 font-medium">
+                    <p className="text-lg text-white leading-relaxed group-hover:text-cyan-100 transition-colors duration-300 font-semibold">
                       {feature.description}
                     </p>
                   </div>
@@ -267,7 +267,7 @@ const HomePage: React.FC = () => {
           <div className="grid md:grid-cols-2 gap-8 mb-20">
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-3xl blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-500" />
-              <Card variant="elevated" className="relative backdrop-blur-xl bg-slate-800/40 border border-green-500/30 group-hover:bg-slate-800/60 transition-all duration-500">
+              <Card variant="elevated" className="relative backdrop-blur-xl bg-slate-800/60 border border-green-500/30 group-hover:bg-slate-700/80 transition-all duration-500">
                 <div className="flex items-center space-x-6">
                   <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center text-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
                     <div className="absolute inset-0 bg-white/10 rounded-2xl backdrop-blur-sm"></div>
@@ -287,7 +287,7 @@ const HomePage: React.FC = () => {
 
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-br from-orange-400/20 to-yellow-500/20 rounded-3xl blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-500" />
-              <Card variant="elevated" className="relative backdrop-blur-xl bg-slate-800/40 border border-orange-500/30 group-hover:bg-slate-800/60 transition-all duration-500">
+              <Card variant="elevated" className="relative backdrop-blur-xl bg-slate-800/60 border border-orange-500/30 group-hover:bg-slate-700/80 transition-all duration-500">
                 <div className="flex items-center space-x-6">
                   <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-yellow-500 rounded-2xl flex items-center justify-center text-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
                     <div className="absolute inset-0 bg-white/10 rounded-2xl backdrop-blur-sm"></div>
