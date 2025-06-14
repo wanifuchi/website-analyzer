@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import html2canvas from 'html2canvas';
 
 interface SimpleAnalysis {
   id: string;
@@ -45,7 +46,10 @@ const HistoryPageSimple: React.FC = () => {
       const data = await response.json();
       console.log('API Response data:', data);
       
-      if (data.success && data.analyses) {
+      if (data.success && data.data && data.data.analyses) {
+        setAnalyses(data.data.analyses);
+      } else if (data.success && data.analyses) {
+        // フォールバック: 古いAPIレスポンス形式に対応
         setAnalyses(data.analyses);
       } else {
         setAnalyses([]);
@@ -151,6 +155,30 @@ const HistoryPageSimple: React.FC = () => {
     }
   };
 
+  const handleScreenshot = async () => {
+    try {
+      const element = document.body;
+      const canvas = await html2canvas(element, {
+        backgroundColor: '#0f172a',
+        scale: 1,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        scrollX: 0,
+        scrollY: 0
+      });
+      
+      const link = document.createElement('a');
+      link.download = `analysis-history-${new Date().toISOString().split('T')[0]}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+      
+      alert('スクリーンショットが保存されました');
+    } catch (error) {
+      console.error('スクリーンショットエラー:', error);
+      alert('スクリーンショットの保存に失敗しました');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
@@ -216,12 +244,20 @@ const HistoryPageSimple: React.FC = () => {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
               分析履歴
             </h1>
-            <Link 
-              to="/" 
-              className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-cyan-500 hover:to-blue-500 transition-all duration-300 shadow-lg hover:shadow-cyan-500/25 font-medium"
-            >
-              新しい分析
-            </Link>
+            <div className="flex gap-3">
+              <button
+                onClick={handleScreenshot}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl hover:from-purple-500 hover:to-pink-500 transition-all duration-300 shadow-lg hover:shadow-purple-500/25 font-medium"
+              >
+                📸 スクリーンショット
+              </button>
+              <Link 
+                to="/" 
+                className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-cyan-500 hover:to-blue-500 transition-all duration-300 shadow-lg hover:shadow-cyan-500/25 font-medium"
+              >
+                新しい分析
+              </Link>
+            </div>
           </div>
         </div>
       </div>

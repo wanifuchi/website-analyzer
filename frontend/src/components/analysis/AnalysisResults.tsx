@@ -6,6 +6,7 @@ import ScoreChart from '../charts/ScoreChart';
 import PerformanceChart from '../charts/PerformanceChart';
 import { AnalysisResults as AnalysisResultsType } from '../../types/analysis';
 import ja from '../../i18n/ja.json';
+import html2canvas from 'html2canvas';
 
 interface AnalysisResultsProps {
   results: AnalysisResultsType;
@@ -13,6 +14,7 @@ interface AnalysisResultsProps {
   onDownloadReport?: () => void;
   onExportCSV?: () => void;
   onReAnalyze?: () => void;
+  onScreenshot?: () => void;
 }
 
 const AnalysisResults: React.FC<AnalysisResultsProps> = ({
@@ -20,9 +22,33 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   url,
   onDownloadReport,
   onExportCSV,
-  onReAnalyze
+  onReAnalyze,
+  onScreenshot
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'seo' | 'performance' | 'security' | 'accessibility' | 'mobile' | 'technology'>('overview');
+
+  const handleScreenshot = async () => {
+    try {
+      const element = document.querySelector('.analysis-results-container') || document.body;
+      const canvas = await html2canvas(element as HTMLElement, {
+        backgroundColor: '#0f172a',
+        scale: 1,
+        useCORS: true
+      });
+      
+      const link = document.createElement('a');
+      link.download = `analysis-results-${url.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+      
+      if (onScreenshot) {
+        onScreenshot();
+      }
+    } catch (error) {
+      console.error('スクリーンショットエラー:', error);
+      alert('スクリーンショットの保存に失敗しました');
+    }
+  };
 
   const getScoreVariant = (score: number) => {
     if (score >= 90) return 'success';
@@ -396,7 +422,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="analysis-results-container space-y-6">
       {/* ヘッダー */}
       <Card>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
@@ -415,6 +441,9 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 {ja.actions.exportCSV}
               </Button>
             )}
+            <Button variant="secondary" onClick={handleScreenshot}>
+              📸 スクリーンショット
+            </Button>
             {onReAnalyze && (
               <Button onClick={onReAnalyze}>
                 {ja.actions.reAnalyze}

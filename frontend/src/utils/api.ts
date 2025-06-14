@@ -76,8 +76,19 @@ export const analysisApi = {
       // レスポンスデータの構造確認
       console.log('History API response:', response.data);
       
-      if (response.data.success && response.data.analyses) {
+      if (response.data.success && response.data.data && response.data.data.analyses) {
         // バックエンドの実際のレスポンス形式に合わせる
+        return {
+          analyses: response.data.data.analyses || [],
+          pagination: response.data.data.pagination || {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0
+          }
+        };
+      } else if (response.data.success && response.data.analyses) {
+        // フォールバック: 古いAPIレスポンス形式に対応
         return {
           analyses: response.data.analyses || [],
           pagination: {

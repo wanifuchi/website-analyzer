@@ -10,6 +10,8 @@ const reportController = new ReportController();
 router.post('/start', rateLimiter, analysisController.startAnalysis.bind(analysisController));
 router.get('/history', analysisController.getAnalysisHistory.bind(analysisController));
 router.get('/:id/status', analysisController.getAnalysisStatus.bind(analysisController));
+router.get('/:id/pdf', reportController.generatePDFReport.bind(reportController));
+router.get('/:id/csv', reportController.exportCSV.bind(reportController));
 router.get('/:id/report', reportController.generatePDFReport.bind(reportController));
 router.get('/:id/export', reportController.exportCSV.bind(reportController));
 router.get('/:id/preview', reportController.getReportPreview.bind(reportController));
