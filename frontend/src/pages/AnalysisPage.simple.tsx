@@ -435,12 +435,44 @@ const AnalysisPage: React.FC = () => {
 
   const handleScreenshot = async () => {
     try {
-      // シンプルで確実な方法：現在の表示をそのままキャプチャ
-      const canvas = await html2canvas(document.body, {
+      // ナビゲーションを一時的に隠す
+      const nav = document.querySelector('nav');
+      const originalNavDisplay = nav ? nav.style.display : '';
+      if (nav) nav.style.display = 'none';
+      
+      // スクロールを一番上に移動
+      const originalScrollTop = window.pageYOffset;
+      window.scrollTo(0, 0);
+      
+      // DOM更新を待つ
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // 分析結果のメインコンテナのみをキャプチャ
+      const analysisContainer = document.querySelector('.analysis-results-container');
+      const targetElement = analysisContainer || document.body;
+      
+      const canvas = await html2canvas(targetElement as HTMLElement, {
+        backgroundColor: '#0f172a',
         useCORS: true,
-        scale: 1,
-        logging: false
+        allowTaint: false,
+        scale: window.devicePixelRatio,
+        scrollX: 0,
+        scrollY: 0,
+        logging: false,
+        onclone: (clonedDoc) => {
+          // クローンされたドキュメントでナビゲーションを完全に削除
+          const clonedNav = clonedDoc.querySelector('nav');
+          if (clonedNav) clonedNav.remove();
+          
+          // fixed要素を全て削除
+          const fixedElements = clonedDoc.querySelectorAll('[style*="position: fixed"], .fixed');
+          fixedElements.forEach(el => el.remove());
+        }
       });
+      
+      // ナビゲーションを元に戻す
+      if (nav) nav.style.display = originalNavDisplay;
+      window.scrollTo(0, originalScrollTop);
       
       // 高品質JPEGとして保存（PNGより軽く、品質も良い）
       const link = document.createElement('a');
