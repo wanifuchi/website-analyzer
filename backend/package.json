@@ -1,6 +1,6 @@
 {
   "name": "toneya-analysis-v1-backend",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Toneya Analysis V1 - 高機能ウェブサイト分析ツールのバックエンドAPI",
   "main": "dist/index.js",
   "scripts": {
