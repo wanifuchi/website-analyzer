@@ -11,8 +11,6 @@ import html2canvas from 'html2canvas';
 interface AnalysisResultsProps {
   results: AnalysisResultsType;
   url: string;
-  onDownloadReport?: () => void;
-  onExportCSV?: () => void;
   onReAnalyze?: () => void;
   onScreenshot?: () => void;
 }
@@ -20,8 +18,6 @@ interface AnalysisResultsProps {
 const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   results,
   url,
-  onDownloadReport,
-  onExportCSV,
   onReAnalyze,
   onScreenshot
 }) => {
@@ -431,16 +427,6 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             <p className="text-gray-600 break-all">{url}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {onDownloadReport && (
-              <Button variant="secondary" onClick={onDownloadReport}>
-                {ja.actions.downloadReport}
-              </Button>
-            )}
-            {onExportCSV && (
-              <Button variant="secondary" onClick={onExportCSV}>
-                {ja.actions.exportCSV}
-              </Button>
-            )}
             <Button variant="secondary" onClick={handleScreenshot}>
               📸 スクリーンショット
             </Button>

@@ -81,79 +81,6 @@ const HistoryPageSimple: React.FC = () => {
     }
   };
 
-  const handleDownloadPDF = async (id: string) => {
-    try {
-      console.log('PDF ダウンロード開始:', id);
-      
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://website-analyzer-production-c933.up.railway.app';
-      const response = await fetch(`${API_BASE_URL}/api/analysis/${id}/pdf`);
-      
-      console.log('PDF Response status:', response.status);
-      
-      if (!response.ok) {
-        throw new Error(`PDF生成エラー: ${response.status}`);
-      }
-      
-      const blob = await response.blob();
-      console.log('PDF Blob size:', blob.size);
-      
-      if (blob.size === 0) {
-        throw new Error('PDFファイルが空です');
-      }
-      
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `analysis-${id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
-      alert('PDFダウンロード完了');
-      
-    } catch (err: any) {
-      console.error('PDF ダウンロードエラー:', err);
-      alert(`PDFダウンロード失敗: ${err.message}`);
-    }
-  };
-
-  const handleDownloadCSV = async (id: string) => {
-    try {
-      console.log('CSV ダウンロード開始:', id);
-      
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://website-analyzer-production-c933.up.railway.app';
-      const response = await fetch(`${API_BASE_URL}/api/analysis/${id}/csv`);
-      
-      console.log('CSV Response status:', response.status);
-      
-      if (!response.ok) {
-        throw new Error(`CSV生成エラー: ${response.status}`);
-      }
-      
-      const blob = await response.blob();
-      console.log('CSV Blob size:', blob.size);
-      
-      if (blob.size === 0) {
-        throw new Error('CSVファイルが空です');
-      }
-      
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `analysis-${id}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
-      alert('CSVダウンロード完了');
-      
-    } catch (err: any) {
-      console.error('CSV ダウンロードエラー:', err);
-      alert(`CSVダウンロード失敗: ${err.message}`);
-    }
-  };
 
   const handleScreenshot = async () => {
     try {
@@ -342,18 +269,6 @@ const HistoryPageSimple: React.FC = () => {
                             >
                               詳細を見る
                             </Link>
-                            <button
-                              onClick={() => handleDownloadPDF(item.id)}
-                              className="text-green-400 hover:text-green-300 transition-colors duration-200"
-                            >
-                              PDF
-                            </button>
-                            <button
-                              onClick={() => handleDownloadCSV(item.id)}
-                              className="text-purple-400 hover:text-purple-300 transition-colors duration-200"
-                            >
-                              CSV
-                            </button>
                           </>
                         ) : item.status === 'processing' ? (
                           <span className="text-slate-400">処理中...</span>
