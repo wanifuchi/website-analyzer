@@ -164,7 +164,7 @@ const HomePage: React.FC = () => {
                       <button
                         key={sampleUrl}
                         type="button"
-                        onClick={() => setUrl(sampleUrl)}
+                        onClick={() => setUrl(`https://${sampleUrl}`)}
                         className="px-4 py-2 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-xl text-sm transition-all duration-300 hover:scale-105 border border-slate-600/50 hover:border-slate-500/50 backdrop-blur-sm"
                       >
                         {sampleUrl}
@@ -203,22 +203,22 @@ const HomePage: React.FC = () => {
             {[
               {
                 icon: '🔍',
-                title: 'AI SEO分析',
-                description: 'メタタグ、見出し構造、キーワード密度、構造化データを機械学習で総合分析',
+                title: 'SEO最適化分析',
+                description: 'メタタグ、見出し構造、キーワード配置、構造化データを検索エンジン向けに総合分析',
                 accent: 'from-cyan-400 to-blue-500',
                 border: 'border-cyan-500/30'
               },
               {
                 icon: '⚡',
                 title: 'リアルタイム性能測定',
-                description: 'Core Web Vitals（LCP、FCP、CLS、TBT）を量子計算技術で瞬時測定',
+                description: 'ページ読み込み速度やユーザー体験指標（LCP、FCP、CLS、TBT）を高精度で測定',
                 accent: 'from-blue-400 to-purple-500',
                 border: 'border-blue-500/30'
               },
               {
                 icon: '🛡️',
-                title: '量子セキュリティ監査',
-                description: 'HTTPS、セキュリティヘッダー、脆弱性を次世代暗号化技術で解析',
+                title: '総合セキュリティ診断',
+                description: 'HTTPS設定、セキュリティヘッダー、脆弱性を包括的にチェックして安全性を評価',
                 accent: 'from-purple-400 to-pink-500',
                 border: 'border-purple-500/30'
               }
@@ -275,10 +275,10 @@ const HomePage: React.FC = () => {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-lg font-bold text-slate-200 group-hover:text-white transition-colors duration-300">
-                      ニューラルアクセシビリティ解析
+                      アクセシビリティ診断
                     </h3>
                     <p className="text-slate-400 group-hover:text-slate-300 transition-colors duration-300">
-                      WCAG 2.1ガイドラインをAIが自動解析
+                      WCAG 2.1ガイドラインに基づく障害者対応度チェック
                     </p>
                   </div>
                 </div>
@@ -295,10 +295,10 @@ const HomePage: React.FC = () => {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-lg font-bold text-slate-200 group-hover:text-white transition-colors duration-300">
-                      モバイルファースト解析
+                      モバイル対応分析
                     </h3>
                     <p className="text-slate-400 group-hover:text-slate-300 transition-colors duration-300">
-                      次世代レスポンシブ設計評価システム
+                      スマートフォン・タブレットでの表示や操作性を詳細評価
                     </p>
                   </div>
                 </div>

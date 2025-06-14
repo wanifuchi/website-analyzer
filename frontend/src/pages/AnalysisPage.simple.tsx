@@ -231,7 +231,7 @@ const AnalysisPage: React.FC = () => {
                   <div className="space-y-6">
                     <div className="flex items-center justify-center text-cyan-400">
                       <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mr-4"></div>
-                      <span className="text-lg">量子分析システム初期化中...</span>
+                      <span className="text-lg">分析システム初期化中...</span>
                     </div>
                     <div className="relative w-full h-4 bg-slate-700/50 rounded-full overflow-hidden">
                       <div className="h-full bg-gradient-to-r from-cyan-400/50 to-purple-400/50 rounded-full animate-pulse" style={{ width: '30%' }}></div>
@@ -246,7 +246,7 @@ const AnalysisPage: React.FC = () => {
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-slate-800/40 to-slate-700/40 rounded-2xl blur-sm"></div>
                 <div className="relative backdrop-blur-sm bg-slate-800/30 border border-slate-600/50 rounded-2xl p-6">
-                  <h3 className="text-lg font-semibold text-slate-200 mb-6 text-center">分析フェーズ</h3>
+                  <h3 className="text-lg font-semibold text-slate-200 mb-6 text-center">分析進行状況</h3>
                   <div className="space-y-4">
                     <div className={`flex items-center transition-all duration-300 ${!progress || progress.currentStep === 'initializing' ? 'text-cyan-400' : 'text-green-400'}`}>
                       {!progress || progress.currentStep === 'initializing' ? (
@@ -254,7 +254,7 @@ const AnalysisPage: React.FC = () => {
                       ) : (
                         <span className="mr-4 text-green-400">✓</span>
                       )}
-                      <span className="font-medium">量子ブラウザ初期化</span>
+                      <span className="font-medium">ブラウザ起動・初期化</span>
                     </div>
                     
                     <div className={`flex items-center transition-all duration-300 ${
@@ -270,7 +270,7 @@ const AnalysisPage: React.FC = () => {
                       ) : (
                         <span className="mr-4 text-slate-500">○</span>
                       )}
-                      <span className="font-medium">ニューラルネットワーク展開</span>
+                      <span className="font-medium">ページ読み込み・解析</span>
                     </div>
                     
                     <div className={`flex items-center transition-all duration-300 ${
@@ -283,7 +283,7 @@ const AnalysisPage: React.FC = () => {
                       ) : (
                         <span className="mr-4 text-slate-500">○</span>
                       )}
-                      <span className="font-medium">多次元解析実行</span>
+                      <span className="font-medium">詳細分析・レポート生成</span>
                     </div>
                   </div>
                 </div>
