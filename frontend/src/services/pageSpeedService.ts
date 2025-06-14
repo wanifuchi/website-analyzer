@@ -9,6 +9,8 @@ export interface CoreWebVitals {
   cls: { value: number | null; displayValue: string; score: number | null; description: string };
   fcp: { value: number | null; displayValue: string; score: number | null; description: string };
   tbt: { value: number | null; displayValue: string; score: number | null; description: string };
+  inp: { value: number | null; displayValue: string; score: number | null; description: string };
+  ttfb: { value: number | null; displayValue: string; score: number | null; description: string };
 }
 
 export interface PageSpeedResults {

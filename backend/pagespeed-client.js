@@ -183,6 +183,22 @@ class PageSpeedInsightsClient {
         displayValue: audits['total-blocking-time']?.displayValue || null,
         score: audits['total-blocking-time']?.score || null,
         description: 'メインスレッドがブロックされた時間の合計'
+      },
+
+      // Interaction to Next Paint (新しい指標)
+      inp: {
+        value: audits['interaction-to-next-paint']?.numericValue || null,
+        displayValue: audits['interaction-to-next-paint']?.displayValue || 'データなし',
+        score: audits['interaction-to-next-paint']?.score || null,
+        description: 'ユーザー操作に対する応答性の指標'
+      },
+
+      // Time to First Byte (サーバー応答時間)
+      ttfb: {
+        value: audits['server-response-time']?.numericValue || null,
+        displayValue: audits['server-response-time']?.displayValue || 'データなし',
+        score: audits['server-response-time']?.score || null,
+        description: 'サーバーからの最初の応答までの時間'
       }
     };
   }
@@ -298,7 +314,9 @@ class PageSpeedInsightsClient {
         fid: { value: null, displayValue: 'データなし', score: null, description: 'ユーザーの最初の操作に対する応答時間' },
         cls: { value: null, displayValue: 'データなし', score: null, description: 'ページ読み込み時のレイアウトの安定性' },
         fcp: { value: null, displayValue: 'データなし', score: null, description: '最初のコンテンツが表示されるまでの時間' },
-        tbt: { value: null, displayValue: 'データなし', score: null, description: 'メインスレッドがブロックされた時間の合計' }
+        tbt: { value: null, displayValue: 'データなし', score: null, description: 'メインスレッドがブロックされた時間の合計' },
+        inp: { value: null, displayValue: 'データなし', score: null, description: 'ユーザー操作に対する応答性の指標' },
+        ttfb: { value: null, displayValue: 'データなし', score: null, description: 'サーバーからの最初の応答までの時間' }
       },
       opportunities: [],
       diagnostics: [],

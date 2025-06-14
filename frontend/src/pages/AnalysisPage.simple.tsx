@@ -759,7 +759,7 @@ const AnalysisPage: React.FC = () => {
               <span className="mr-2">🚀</span>
               Core Web Vitals（リアルタイム測定）
             </h3>
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
               {/* LCP */}
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
@@ -808,6 +808,59 @@ const AnalysisPage: React.FC = () => {
                 </p>
                 <p className="text-xs text-gray-600 mt-1">
                   {analysisData.results.pageSpeed.mobile.coreWebVitals.cls.description}
+                </p>
+              </div>
+
+              {/* FCP */}
+              <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-gray-900">FCP</h4>
+                  <span className={`w-3 h-3 rounded-full ${
+                    analysisData.results.pageSpeed.mobile.coreWebVitals.fcp.score >= 0.75 ? 'bg-green-500' :
+                    analysisData.results.pageSpeed.mobile.coreWebVitals.fcp.score >= 0.5 ? 'bg-yellow-500' : 'bg-red-500'
+                  }`}></span>
+                </div>
+                <p className="text-2xl font-bold text-yellow-700">
+                  {analysisData.results.pageSpeed.mobile.coreWebVitals.fcp.displayValue}
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  {analysisData.results.pageSpeed.mobile.coreWebVitals.fcp.description}
+                </p>
+              </div>
+
+              {/* INP */}
+              {analysisData.results.pageSpeed.mobile.coreWebVitals.inp && (
+                <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-4 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-gray-900">INP</h4>
+                    <span className={`w-3 h-3 rounded-full ${
+                      analysisData.results.pageSpeed.mobile.coreWebVitals.inp.score >= 0.75 ? 'bg-green-500' :
+                      analysisData.results.pageSpeed.mobile.coreWebVitals.inp.score >= 0.5 ? 'bg-yellow-500' : 'bg-red-500'
+                    }`}></span>
+                  </div>
+                  <p className="text-2xl font-bold text-indigo-700">
+                    {analysisData.results.pageSpeed.mobile.coreWebVitals.inp.displayValue}
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    {analysisData.results.pageSpeed.mobile.coreWebVitals.inp.description}
+                  </p>
+                </div>
+              )}
+
+              {/* TTFB */}
+              <div className="bg-gradient-to-br from-rose-50 to-rose-100 p-4 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-gray-900">TTFB</h4>
+                  <span className={`w-3 h-3 rounded-full ${
+                    analysisData.results.pageSpeed.mobile.coreWebVitals.ttfb.score >= 0.75 ? 'bg-green-500' :
+                    analysisData.results.pageSpeed.mobile.coreWebVitals.ttfb.score >= 0.5 ? 'bg-yellow-500' : 'bg-red-500'
+                  }`}></span>
+                </div>
+                <p className="text-2xl font-bold text-rose-700">
+                  {analysisData.results.pageSpeed.mobile.coreWebVitals.ttfb.displayValue}
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  {analysisData.results.pageSpeed.mobile.coreWebVitals.ttfb.description}
                 </p>
               </div>
             </div>
