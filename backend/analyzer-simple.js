@@ -46,6 +46,7 @@ class SimpleWebAnalyzer {
       };
 
       // 並列で分析を実行
+      console.log('🔍 Starting parallel analysis...');
       const [
         seoResults,
         performanceResults,
@@ -61,15 +62,14 @@ class SimpleWebAnalyzer {
         Promise.resolve(this.analyzeMobile($, pageInfo)),
         this.analyzeWithPageSpeed(pageInfo.url)
       ]);
-
-      // Promise.allSettled の結果をデバッグ
+      
       console.log('🔍 Promise.allSettled Results:', {
-        seoStatus: seoResults.status,
-        performanceStatus: performanceResults.status,
-        securityStatus: securityResults.status,
-        accessibilityStatus: accessibilityResults.status,
-        mobileStatus: mobileResults.status,
-        pageSpeedStatus: pageSpeedResults.status,
+        seo: seoResults.status,
+        performance: performanceResults.status,
+        security: securityResults.status,
+        accessibility: accessibilityResults.status,
+        mobile: mobileResults.status,
+        pageSpeed: pageSpeedResults.status,
         pageSpeedError: pageSpeedResults.status === 'rejected' ? pageSpeedResults.reason?.message : null
       });
 
