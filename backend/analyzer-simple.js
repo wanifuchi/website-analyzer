@@ -8,7 +8,18 @@ const PageSpeedInsightsClient = require('./pagespeed-client');
 class SimpleWebAnalyzer {
   constructor() {
     this.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    
+    // PageSpeedClient初期化デバッグ
+    console.log('🔍 SimpleWebAnalyzer Constructor Debug:', {
+      hasApiKey: !!process.env.GOOGLE_PAGESPEED_API_KEY,
+      apiKeyLength: process.env.GOOGLE_PAGESPEED_API_KEY?.length || 0
+    });
+    
     this.pageSpeedClient = new PageSpeedInsightsClient();
+    
+    console.log('🔍 PageSpeed Client After Init:', {
+      isAvailable: this.pageSpeedClient.isApiAvailable()
+    });
   }
 
   async analyzeWebsite(url) {
@@ -51,6 +62,17 @@ class SimpleWebAnalyzer {
         this.analyzeWithPageSpeed(pageInfo.url)
       ]);
 
+      // Promise.allSettled の結果をデバッグ
+      console.log('🔍 Promise.allSettled Results:', {
+        seoStatus: seoResults.status,
+        performanceStatus: performanceResults.status,
+        securityStatus: securityResults.status,
+        accessibilityStatus: accessibilityResults.status,
+        mobileStatus: mobileResults.status,
+        pageSpeedStatus: pageSpeedResults.status,
+        pageSpeedError: pageSpeedResults.status === 'rejected' ? pageSpeedResults.reason?.message : null
+      });
+
       // 結果を取得（エラーの場合はデフォルト値）
       const seo = seoResults.status === 'fulfilled' ? seoResults.value : this.getDefaultSeoResults();
       const performance = performanceResults.status === 'fulfilled' ? performanceResults.value : this.getDefaultPerformanceResults();
@@ -58,6 +80,12 @@ class SimpleWebAnalyzer {
       const accessibility = accessibilityResults.status === 'fulfilled' ? accessibilityResults.value : this.getDefaultAccessibilityResults();
       const mobile = mobileResults.status === 'fulfilled' ? mobileResults.value : this.getDefaultMobileResults();
       const pageSpeed = pageSpeedResults.status === 'fulfilled' ? pageSpeedResults.value : null;
+
+      console.log('🔍 Final PageSpeed Value:', {
+        hasPageSpeed: !!pageSpeed,
+        pageSpeedType: typeof pageSpeed,
+        pageSpeedKeys: pageSpeed ? Object.keys(pageSpeed) : null
+      });
 
       // PageSpeed Insights データでパフォーマンス分析を強化
       const enhancedPerformance = this.enhancePerformanceWithPageSpeed(performance, pageSpeed);
@@ -1135,6 +1163,13 @@ class SimpleWebAnalyzer {
    * @returns {Object} PageSpeed分析結果
    */
   async analyzeWithPageSpeed(url) {
+    console.log('🔍 PageSpeed API Check:', {
+      hasClient: !!this.pageSpeedClient,
+      isAvailable: this.pageSpeedClient ? this.pageSpeedClient.isApiAvailable() : false,
+      apiKey: this.pageSpeedClient ? this.pageSpeedClient.apiKey : 'no client',
+      hasApiKey: !!(this.pageSpeedClient && this.pageSpeedClient.apiKey)
+    });
+    
     if (!this.pageSpeedClient.isApiAvailable()) {
       console.log('📋 PageSpeed Insights API が利用できません');
       return null;
@@ -1144,9 +1179,21 @@ class SimpleWebAnalyzer {
       console.log('🚀 PageSpeed Insights 分析開始...');
       const results = await this.pageSpeedClient.analyzeBothStrategies(url);
       console.log('✅ PageSpeed Insights 分析完了');
+      
+      // デバッグログ: 結果の構造を確認
+      console.log('🔍 PageSpeed Results Structure:', {
+        hasResults: !!results,
+        hasMobile: !!results?.mobile,
+        hasDesktop: !!results?.desktop,
+        mobilePerformanceScore: results?.mobile?.scores?.performance,
+        desktopPerformanceScore: results?.desktop?.scores?.performance,
+        hasCoreWebVitals: !!results?.mobile?.coreWebVitals
+      });
+      
       return results;
     } catch (error) {
       console.error('❌ PageSpeed Insights 分析エラー:', error.message);
+      console.error('❌ PageSpeed Error Details:', error.stack);
       return null;
     }
   }
