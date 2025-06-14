@@ -44,7 +44,7 @@ export const analysisApi = {
 
   // 分析結果取得
   getAnalysis: async (id: string): Promise<Analysis> => {
-    const response = await api.get<ApiResponse<Analysis>>(`/analysis/${id}`);
+    const response = await api.get<ApiResponse<Analysis>>(`/api/analysis/${id}`);
     if (!response.data.success || !response.data.data) {
       throw new Error(response.data.error || '分析結果の取得に失敗しました');
     }
@@ -53,7 +53,7 @@ export const analysisApi = {
 
   // 分析ステータス確認
   getAnalysisStatus: async (id: string): Promise<Analysis> => {
-    const response = await api.get<ApiResponse<Analysis>>(`/analysis/${id}/status`);
+    const response = await api.get<ApiResponse<Analysis>>(`/api/analysis/${id}/status`);
     if (!response.data.success || !response.data.data) {
       throw new Error(response.data.error || 'ステータスの取得に失敗しました');
     }
@@ -78,7 +78,7 @@ export const analysisApi = {
         total: number;
         totalPages: number;
       };
-    }>>(`/analysis/history?page=${page}&limit=${limit}`);
+    }>>(`/api/analysis/history?page=${page}&limit=${limit}`);
     if (!response.data.success || !response.data.data) {
       throw new Error(response.data.error || '履歴の取得に失敗しました');
     }
@@ -87,7 +87,7 @@ export const analysisApi = {
 
   // 分析結果削除
   deleteAnalysis: async (id: string): Promise<void> => {
-    const response = await api.delete<ApiResponse<void>>(`/analysis/${id}`);
+    const response = await api.delete<ApiResponse<void>>(`/api/analysis/${id}`);
     if (!response.data.success) {
       throw new Error(response.data.error || '分析結果の削除に失敗しました');
     }
@@ -95,7 +95,7 @@ export const analysisApi = {
 
   // PDFレポート生成
   generatePDFReport: async (id: string): Promise<Blob> => {
-    const response = await api.get(`/analysis/${id}/report`, {
+    const response = await api.get(`/api/analysis/${id}/pdf`, {
       responseType: 'blob',
     });
     return response.data;
@@ -103,7 +103,7 @@ export const analysisApi = {
 
   // CSVエクスポート
   exportCSV: async (id: string): Promise<Blob> => {
-    const response = await api.get(`/analysis/${id}/export`, {
+    const response = await api.get(`/api/analysis/${id}/csv`, {
       responseType: 'blob',
     });
     return response.data;

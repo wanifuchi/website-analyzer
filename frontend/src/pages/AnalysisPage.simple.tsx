@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { pageSpeedService } from '../services/pageSpeedService';
 import { getCoreWebVitalEvaluation, getColorClasses } from '../utils/coreWebVitalsEvaluator';
 import MetricCard from '../components/MetricCard';
+import { useGeneratePDFReport, useExportCSV } from '../hooks/useAnalysis';
 
 interface AnalysisProgress {
   currentStep: string;
@@ -15,10 +16,12 @@ const AnalysisPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [status, setStatus] = useState<'loading' | 'completed' | 'error'>('loading');
   const [analysisData, setAnalysisData] = useState<any>(null);
-  const [downloading, setDownloading] = useState<string | null>(null);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [progress, setProgress] = useState<AnalysisProgress | null>(null);
   const [pageSpeedLoading, setPageSpeedLoading] = useState<boolean>(false);
+  
+  const generatePDFMutation = useGeneratePDFReport();
+  const exportCSVMutation = useExportCSV();
 
 
   useEffect(() => {
@@ -420,44 +423,15 @@ const AnalysisPage: React.FC = () => {
     }
   };
 
-  const downloadReport = async (format: 'pdf' | 'csv') => {
-    if (!analysisData?.id || downloading) return;
-    
-    setDownloading(format);
-    try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://website-analyzer-production-c933.up.railway.app';
-      const response = await fetch(`${API_BASE_URL}/api/analysis/${analysisData.id}/${format}`);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `ダウンロードに失敗しました: ${response.status}`);
-      }
-      
-      const blob = await response.blob();
-      
-      // ファイルサイズをチェック
-      if (blob.size === 0) {
-        throw new Error('ファイルが空です');
-      }
-      
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `website-analysis-${analysisData.id}.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      
-      // クリーンアップ
-      setTimeout(() => {
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      }, 100);
-      
-    } catch (error) {
-      console.error(`${format.toUpperCase()} download error:`, error);
-      alert(`${format.toUpperCase()}ダウンロードに失敗しました: ${error.message}`);
-    } finally {
-      setDownloading(null);
+  const handleDownloadPDF = () => {
+    if (analysisData?.id) {
+      generatePDFMutation.mutate(analysisData.id);
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (analysisData?.id) {
+      exportCSVMutation.mutate(analysisData.id);
     }
   };
 
@@ -1051,35 +1025,35 @@ const AnalysisPage: React.FC = () => {
         {/* アクションボタン */}
         <div className="mt-8 flex justify-center space-x-4">
           <button 
-            onClick={() => downloadReport('pdf')}
-            disabled={downloading === 'pdf'}
-            className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleDownloadPDF}
+            disabled={generatePDFMutation.isPending}
+            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white px-8 py-4 rounded-xl flex items-center disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg hover:shadow-xl transition-all duration-300"
           >
-            {downloading === 'pdf' ? (
+            {generatePDFMutation.isPending ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
                 PDF生成中...
               </>
             ) : (
               <>
-                <span className="mr-2">📄</span>
+                <span className="mr-3 text-lg">📄</span>
                 PDFレポートをダウンロード
               </>
             )}
           </button>
           <button 
-            onClick={() => downloadReport('csv')}
-            disabled={downloading === 'csv'}
-            className="bg-gray-600 text-white px-6 py-3 rounded-md hover:bg-gray-700 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleExportCSV}
+            disabled={exportCSVMutation.isPending}
+            className="bg-gradient-to-r from-orange-500 to-yellow-600 hover:from-orange-400 hover:to-yellow-500 text-white px-8 py-4 rounded-xl flex items-center disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg hover:shadow-xl transition-all duration-300"
           >
-            {downloading === 'csv' ? (
+            {exportCSVMutation.isPending ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
                 CSV生成中...
               </>
             ) : (
               <>
-                <span className="mr-2">📊</span>
+                <span className="mr-3 text-lg">📊</span>
                 CSVエクスポート
               </>
             )}
