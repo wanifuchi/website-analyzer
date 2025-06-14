@@ -18,6 +18,60 @@ const AnalysisPage: React.FC = () => {
   const [progress, setProgress] = useState<AnalysisProgress | null>(null);
   const [pageSpeedLoading, setPageSpeedLoading] = useState<boolean>(false);
 
+  // Core Web Vitals の評価とアドバイスを取得
+  const getCoreWebVitalEvaluation = (metric: string, value: number | null, score: number | null) => {
+    if (value === null || score === null) {
+      return {
+        status: 'unknown',
+        color: 'gray',
+        evaluation: 'データなし',
+        advice: 'データが取得できませんでした',
+        target: '-'
+      };
+    }
+
+    const evaluations: any = {
+      'lcp': {
+        good: { threshold: 2500, evaluation: '優秀', advice: '現在の速度を維持してください', target: '2.5秒以下（推奨）' },
+        needsImprovement: { threshold: 4000, evaluation: '要改善', advice: '画像最適化、サーバー応答改善が必要', target: '2.5秒以下に改善' },
+        poor: { evaluation: '問題あり', advice: '画像圧縮、CDN導入、サーバー最適化が急務', target: '2.5秒以下に大幅改善' }
+      },
+      'fcp': {
+        good: { threshold: 1800, evaluation: '優秀', advice: '初期表示が高速です', target: '1.8秒以下（推奨）' },
+        needsImprovement: { threshold: 3000, evaluation: '要改善', advice: 'CSS・JavaScript最適化が必要', target: '1.8秒以下に改善' },
+        poor: { evaluation: '問題あり', advice: 'リソース圧縮、クリティカルCSS適用が急務', target: '1.8秒以下に大幅改善' }
+      },
+      'cls': {
+        good: { threshold: 0.1, evaluation: '優秀', advice: 'レイアウトが安定しています', target: '0.1以下（推奨）' },
+        needsImprovement: { threshold: 0.25, evaluation: '要改善', advice: '画像サイズ指定、フォント最適化が必要', target: '0.1以下に改善' },
+        poor: { evaluation: '問題あり', advice: 'レイアウトシフト防止策の実装が急務', target: '0.1以下に大幅改善' }
+      },
+      'tbt': {
+        good: { threshold: 200, evaluation: '優秀', advice: 'JavaScriptの実行が効率的です', target: '200ms以下（推奨）' },
+        needsImprovement: { threshold: 600, evaluation: '要改善', advice: 'JavaScript分割、遅延読み込みが必要', target: '200ms以下に改善' },
+        poor: { evaluation: '問題あり', advice: 'JavaScript最適化、不要コード削除が急務', target: '200ms以下に大幅改善' }
+      },
+      'ttfb': {
+        good: { threshold: 800, evaluation: '優秀', advice: 'サーバー応答が高速です', target: '800ms以下（推奨）' },
+        needsImprovement: { threshold: 1800, evaluation: '要改善', advice: 'サーバー最適化、CDN導入を検討', target: '800ms以下に改善' },
+        poor: { evaluation: '問題あり', advice: 'サーバー性能向上、キャッシュ戦略見直しが急務', target: '800ms以下に大幅改善' }
+      }
+    };
+
+    const metricEval = evaluations[metric];
+    if (!metricEval) return { status: 'unknown', color: 'gray', evaluation: '不明', advice: '-', target: '-' };
+
+    const valueMs = metric === 'cls' ? value : (metric === 'ttfb' ? value : value);
+    
+    if (score >= 0.9) {
+      return { status: 'good', color: 'green', ...metricEval.good };
+    } else if (score >= 0.5) {
+      return { status: 'needsImprovement', color: 'yellow', ...metricEval.needsImprovement };
+    } else {
+      return { status: 'poor', color: 'red', ...metricEval.poor };
+    }
+  };
+
   useEffect(() => {
     const fetchAnalysisResult = async () => {
       if (!id) return;
@@ -759,74 +813,136 @@ const AnalysisPage: React.FC = () => {
               <span className="mr-2">🚀</span>
               Core Web Vitals（リアルタイム測定）
             </h3>
+            {/* Core Web Vitals 評価説明 */}
+            <div className="mb-6 bg-gray-50 p-4 rounded-lg">
+              <h4 className="font-medium text-gray-900 mb-2">📊 評価基準</h4>
+              <div className="grid md:grid-cols-3 gap-4 text-sm">
+                <div className="flex items-center">
+                  <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                  <span className="text-green-700 font-medium">良好</span>
+                  <span className="text-gray-600 ml-2">推奨範囲内</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
+                  <span className="text-yellow-700 font-medium">要改善</span>
+                  <span className="text-gray-600 ml-2">最適化が必要</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                  <span className="text-red-700 font-medium">問題あり</span>
+                  <span className="text-gray-600 ml-2">早急な改善が必要</span>
+                </div>
+              </div>
+            </div>
+
             <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
               {/* LCP */}
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-gray-900">LCP</h4>
-                  <span className={`w-3 h-3 rounded-full ${
-                    analysisData.results.pageSpeed.mobile.coreWebVitals.lcp.score >= 0.75 ? 'bg-green-500' :
-                    analysisData.results.pageSpeed.mobile.coreWebVitals.lcp.score >= 0.5 ? 'bg-yellow-500' : 'bg-red-500'
-                  }`}></span>
-                </div>
-                <p className="text-2xl font-bold text-blue-700">
-                  {analysisData.results.pageSpeed.mobile.coreWebVitals.lcp.displayValue}
-                </p>
-                <p className="text-xs text-gray-600 mt-1">
-                  {analysisData.results.pageSpeed.mobile.coreWebVitals.lcp.description}
-                </p>
-              </div>
+              {(() => {
+                const lcpEval = getCoreWebVitalEvaluation('lcp', analysisData.results.pageSpeed.mobile.coreWebVitals.lcp.value, analysisData.results.pageSpeed.mobile.coreWebVitals.lcp.score);
+                return (
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-900">LCP</h4>
+                      <span className={`w-3 h-3 rounded-full bg-${lcpEval.color}-500`}></span>
+                    </div>
+                    <p className="text-2xl font-bold text-blue-700">
+                      {analysisData.results.pageSpeed.mobile.coreWebVitals.lcp.displayValue}
+                    </p>
+                    <div className="mt-2 pt-2 border-t border-blue-200">
+                      <p className={`text-xs font-semibold text-${lcpEval.color}-700`}>
+                        {lcpEval.evaluation}
+                      </p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        🎯 {lcpEval.target}
+                      </p>
+                      <p className="text-xs text-gray-700 mt-1">
+                        💡 {lcpEval.advice}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
 
-              {/* FID/TBT */}
-              <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-gray-900">TBT</h4>
-                  <span className={`w-3 h-3 rounded-full ${
-                    analysisData.results.pageSpeed.mobile.coreWebVitals.tbt.score >= 0.75 ? 'bg-green-500' :
-                    analysisData.results.pageSpeed.mobile.coreWebVitals.tbt.score >= 0.5 ? 'bg-yellow-500' : 'bg-red-500'
-                  }`}></span>
-                </div>
-                <p className="text-2xl font-bold text-green-700">
-                  {analysisData.results.pageSpeed.mobile.coreWebVitals.tbt.displayValue}
-                </p>
-                <p className="text-xs text-gray-600 mt-1">
-                  {analysisData.results.pageSpeed.mobile.coreWebVitals.tbt.description}
-                </p>
-              </div>
+              {/* TBT */}
+              {(() => {
+                const tbtEval = getCoreWebVitalEvaluation('tbt', analysisData.results.pageSpeed.mobile.coreWebVitals.tbt.value, analysisData.results.pageSpeed.mobile.coreWebVitals.tbt.score);
+                return (
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-900">TBT</h4>
+                      <span className={`w-3 h-3 rounded-full bg-${tbtEval.color}-500`}></span>
+                    </div>
+                    <p className="text-2xl font-bold text-green-700">
+                      {analysisData.results.pageSpeed.mobile.coreWebVitals.tbt.displayValue}
+                    </p>
+                    <div className="mt-2 pt-2 border-t border-green-200">
+                      <p className={`text-xs font-semibold text-${tbtEval.color}-700`}>
+                        {tbtEval.evaluation}
+                      </p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        🎯 {tbtEval.target}
+                      </p>
+                      <p className="text-xs text-gray-700 mt-1">
+                        💡 {tbtEval.advice}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* CLS */}
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-gray-900">CLS</h4>
-                  <span className={`w-3 h-3 rounded-full ${
-                    analysisData.results.pageSpeed.mobile.coreWebVitals.cls.score >= 0.75 ? 'bg-green-500' :
-                    analysisData.results.pageSpeed.mobile.coreWebVitals.cls.score >= 0.5 ? 'bg-yellow-500' : 'bg-red-500'
-                  }`}></span>
-                </div>
-                <p className="text-2xl font-bold text-purple-700">
-                  {analysisData.results.pageSpeed.mobile.coreWebVitals.cls.displayValue}
-                </p>
-                <p className="text-xs text-gray-600 mt-1">
-                  {analysisData.results.pageSpeed.mobile.coreWebVitals.cls.description}
-                </p>
-              </div>
+              {(() => {
+                const clsEval = getCoreWebVitalEvaluation('cls', analysisData.results.pageSpeed.mobile.coreWebVitals.cls.value, analysisData.results.pageSpeed.mobile.coreWebVitals.cls.score);
+                return (
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-900">CLS</h4>
+                      <span className={`w-3 h-3 rounded-full bg-${clsEval.color}-500`}></span>
+                    </div>
+                    <p className="text-2xl font-bold text-purple-700">
+                      {analysisData.results.pageSpeed.mobile.coreWebVitals.cls.displayValue}
+                    </p>
+                    <div className="mt-2 pt-2 border-t border-purple-200">
+                      <p className={`text-xs font-semibold text-${clsEval.color}-700`}>
+                        {clsEval.evaluation}
+                      </p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        🎯 {clsEval.target}
+                      </p>
+                      <p className="text-xs text-gray-700 mt-1">
+                        💡 {clsEval.advice}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* FCP */}
-              <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-gray-900">FCP</h4>
-                  <span className={`w-3 h-3 rounded-full ${
-                    analysisData.results.pageSpeed.mobile.coreWebVitals.fcp.score >= 0.75 ? 'bg-green-500' :
-                    analysisData.results.pageSpeed.mobile.coreWebVitals.fcp.score >= 0.5 ? 'bg-yellow-500' : 'bg-red-500'
-                  }`}></span>
-                </div>
-                <p className="text-2xl font-bold text-yellow-700">
-                  {analysisData.results.pageSpeed.mobile.coreWebVitals.fcp.displayValue}
-                </p>
-                <p className="text-xs text-gray-600 mt-1">
-                  {analysisData.results.pageSpeed.mobile.coreWebVitals.fcp.description}
-                </p>
-              </div>
+              {(() => {
+                const fcpEval = getCoreWebVitalEvaluation('fcp', analysisData.results.pageSpeed.mobile.coreWebVitals.fcp.value, analysisData.results.pageSpeed.mobile.coreWebVitals.fcp.score);
+                return (
+                  <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-900">FCP</h4>
+                      <span className={`w-3 h-3 rounded-full bg-${fcpEval.color}-500`}></span>
+                    </div>
+                    <p className="text-2xl font-bold text-yellow-700">
+                      {analysisData.results.pageSpeed.mobile.coreWebVitals.fcp.displayValue}
+                    </p>
+                    <div className="mt-2 pt-2 border-t border-yellow-200">
+                      <p className={`text-xs font-semibold text-${fcpEval.color}-700`}>
+                        {fcpEval.evaluation}
+                      </p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        🎯 {fcpEval.target}
+                      </p>
+                      <p className="text-xs text-gray-700 mt-1">
+                        💡 {fcpEval.advice}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* INP */}
               {analysisData.results.pageSpeed.mobile.coreWebVitals.inp && (
@@ -848,21 +964,31 @@ const AnalysisPage: React.FC = () => {
               )}
 
               {/* TTFB */}
-              <div className="bg-gradient-to-br from-rose-50 to-rose-100 p-4 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-gray-900">TTFB</h4>
-                  <span className={`w-3 h-3 rounded-full ${
-                    analysisData.results.pageSpeed.mobile.coreWebVitals.ttfb.score >= 0.75 ? 'bg-green-500' :
-                    analysisData.results.pageSpeed.mobile.coreWebVitals.ttfb.score >= 0.5 ? 'bg-yellow-500' : 'bg-red-500'
-                  }`}></span>
-                </div>
-                <p className="text-2xl font-bold text-rose-700">
-                  {analysisData.results.pageSpeed.mobile.coreWebVitals.ttfb.displayValue}
-                </p>
-                <p className="text-xs text-gray-600 mt-1">
-                  {analysisData.results.pageSpeed.mobile.coreWebVitals.ttfb.description}
-                </p>
-              </div>
+              {(() => {
+                const ttfbEval = getCoreWebVitalEvaluation('ttfb', analysisData.results.pageSpeed.mobile.coreWebVitals.ttfb.value, analysisData.results.pageSpeed.mobile.coreWebVitals.ttfb.score);
+                return (
+                  <div className="bg-gradient-to-br from-rose-50 to-rose-100 p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-900">TTFB</h4>
+                      <span className={`w-3 h-3 rounded-full bg-${ttfbEval.color}-500`}></span>
+                    </div>
+                    <p className="text-2xl font-bold text-rose-700">
+                      {analysisData.results.pageSpeed.mobile.coreWebVitals.ttfb.displayValue}
+                    </p>
+                    <div className="mt-2 pt-2 border-t border-rose-200">
+                      <p className={`text-xs font-semibold text-${ttfbEval.color}-700`}>
+                        {ttfbEval.evaluation}
+                      </p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        🎯 {ttfbEval.target}
+                      </p>
+                      <p className="text-xs text-gray-700 mt-1">
+                        💡 {ttfbEval.advice}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
             
             <div className="mt-4 flex items-center justify-between text-sm">
