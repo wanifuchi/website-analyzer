@@ -153,102 +153,147 @@ const AnalysisPage: React.FC = () => {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-lg mx-auto px-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 mb-6">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          </div>
-          
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">ウェブサイトを分析中...</h2>
-          <p className="text-gray-600 mb-6">分析ID: {id}</p>
-          
-          {/* 進捗バー */}
-          <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
-            {progress ? (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700">
-                    {progress.currentStepLabel}
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    {progress.progress}%
-                  </span>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+        {/* 近未来的背景装飾 */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_50%)] -z-10" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(168,85,247,0.1),transparent_50%)] -z-10" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(34,197,94,0.1),transparent_50%)] -z-10" />
+        
+        {/* アニメーション背景要素 */}
+        <div className="absolute top-20 right-20 w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
+        <div className="absolute top-40 left-20 w-1 h-1 bg-purple-400 rounded-full animate-ping" />
+        <div className="absolute bottom-40 right-40 w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
+        
+        <div className="flex items-center justify-center min-h-screen px-4">
+          <div className="text-center max-w-2xl mx-auto">
+            {/* AI分析ローダー */}
+            <div className="relative mb-8">
+              <div className="w-24 h-24 mx-auto">
+                {/* 外側のリング */}
+                <div className="absolute inset-0 border-4 border-cyan-500/30 rounded-full animate-spin"></div>
+                {/* 中間のリング */}
+                <div className="absolute inset-2 border-4 border-blue-500/40 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '2s' }}></div>
+                {/* 内側のリング */}
+                <div className="absolute inset-4 border-4 border-purple-500/50 rounded-full animate-spin" style={{ animationDuration: '3s' }}></div>
+                {/* 中央のTロゴ */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                    T
+                  </div>
                 </div>
-                
-                {/* プログレスバー */}
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
-                    style={{ width: `${progress.progress}%` }}
-                  ></div>
-                </div>
-                
-                {/* 残り時間 */}
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>残り約 {progress.estimatedTimeRemaining} 秒</span>
-                  <span>現在: {progress.currentStep}</span>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-center text-blue-600">
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent mr-3"></div>
-                  <span className="text-sm">分析を初期化中...</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-300 h-2 rounded-full animate-pulse" style={{ width: '30%' }}></div>
-                </div>
-              </div>
-            )}
-          </div>
-          
-          {/* 分析ステップ表示 */}
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <h3 className="text-sm font-medium text-gray-900 mb-4">分析ステップ</h3>
-            <div className="space-y-3 text-sm">
-              <div className={`flex items-center ${!progress || progress.currentStep === 'initializing' ? 'text-blue-600' : 'text-green-600'}`}>
-                {!progress || progress.currentStep === 'initializing' ? (
-                  <div className="animate-spin rounded-full h-3 w-3 border border-blue-600 border-t-transparent mr-3"></div>
-                ) : (
-                  <span className="mr-3">✓</span>
-                )}
-                ブラウザ初期化
               </div>
               
-              <div className={`flex items-center ${
-                !progress ? 'text-gray-400' :
-                progress.currentStep === 'loading' ? 'text-blue-600' :
-                ['seo', 'performance', 'security', 'accessibility', 'mobile'].includes(progress.currentStep) ? 'text-green-600' :
-                'text-gray-400'
-              }`}>
-                {progress && progress.currentStep === 'loading' ? (
-                  <div className="animate-spin rounded-full h-3 w-3 border border-blue-600 border-t-transparent mr-3"></div>
-                ) : progress && ['seo', 'performance', 'security', 'accessibility', 'mobile'].includes(progress.currentStep) ? (
-                  <span className="mr-3">✓</span>
+              {/* ホログラフィック効果 */}
+              <div className="absolute inset-0 w-24 h-24 mx-auto bg-gradient-to-r from-cyan-400/20 to-purple-400/20 rounded-full blur-xl animate-pulse"></div>
+            </div>
+            
+            <div className="space-y-4 mb-8">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
+                AI分析エンジン稼働中
+              </h2>
+              <p className="text-slate-400 text-lg">分析ID: <span className="text-cyan-400 font-mono">{id}</span></p>
+            </div>
+            
+            {/* 近未来的進捗バー */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-3xl blur-xl"></div>
+              <div className="relative backdrop-blur-xl bg-slate-800/40 border border-slate-700/50 rounded-3xl p-8 shadow-2xl">
+                {progress ? (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-medium text-slate-200">
+                        {progress.currentStepLabel}
+                      </span>
+                      <span className="text-cyan-400 font-mono text-lg">
+                        {progress.progress}%
+                      </span>
+                    </div>
+                    
+                    {/* ネオンプログレスバー */}
+                    <div className="relative w-full h-4 bg-slate-700/50 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 rounded-full transition-all duration-500 ease-out shadow-lg"
+                        style={{ width: `${progress.progress}%` }}
+                      />
+                      <div 
+                        className="absolute top-0 h-full w-1/3 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full animate-pulse"
+                        style={{ left: `${Math.max(0, progress.progress - 30)}%` }}
+                      />
+                    </div>
+                    
+                    {/* ステータス情報 */}
+                    <div className="flex justify-between text-sm text-slate-400">
+                      <span>⏱️ 残り約 {progress.estimatedTimeRemaining} 秒</span>
+                      <span className="font-mono">現在: {progress.currentStep}</span>
+                    </div>
+                  </div>
                 ) : (
-                  <span className="mr-3">○</span>
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-center text-cyan-400">
+                      <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mr-4"></div>
+                      <span className="text-lg">量子分析システム初期化中...</span>
+                    </div>
+                    <div className="relative w-full h-4 bg-slate-700/50 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-cyan-400/50 to-purple-400/50 rounded-full animate-pulse" style={{ width: '30%' }}></div>
+                    </div>
+                  </div>
                 )}
-                ページ読み込み
-              </div>
-              
-              <div className={`flex items-center ${
-                !progress ? 'text-gray-400' :
-                ['seo', 'performance', 'security', 'accessibility', 'mobile'].includes(progress.currentStep) ? 'text-blue-600' :
-                'text-gray-400'
-              }`}>
-                {progress && ['seo', 'performance', 'security', 'accessibility', 'mobile'].includes(progress.currentStep) ? (
-                  <div className="animate-spin rounded-full h-3 w-3 border border-blue-600 border-t-transparent mr-3"></div>
-                ) : (
-                  <span className="mr-3">○</span>
-                )}
-                SEO・パフォーマンス・セキュリティ分析
               </div>
             </div>
+            
+            {/* AI分析ステップ表示 */}
+            <div className="mt-12 max-w-md mx-auto">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-slate-800/40 to-slate-700/40 rounded-2xl blur-sm"></div>
+                <div className="relative backdrop-blur-sm bg-slate-800/30 border border-slate-600/50 rounded-2xl p-6">
+                  <h3 className="text-lg font-semibold text-slate-200 mb-6 text-center">分析フェーズ</h3>
+                  <div className="space-y-4">
+                    <div className={`flex items-center transition-all duration-300 ${!progress || progress.currentStep === 'initializing' ? 'text-cyan-400' : 'text-green-400'}`}>
+                      {!progress || progress.currentStep === 'initializing' ? (
+                        <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mr-4"></div>
+                      ) : (
+                        <span className="mr-4 text-green-400">✓</span>
+                      )}
+                      <span className="font-medium">量子ブラウザ初期化</span>
+                    </div>
+                    
+                    <div className={`flex items-center transition-all duration-300 ${
+                      !progress ? 'text-slate-500' :
+                      progress.currentStep === 'loading' ? 'text-cyan-400' :
+                      ['seo', 'performance', 'security', 'accessibility', 'mobile'].includes(progress.currentStep) ? 'text-green-400' :
+                      'text-slate-500'
+                    }`}>
+                      {progress && progress.currentStep === 'loading' ? (
+                        <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mr-4"></div>
+                      ) : progress && ['seo', 'performance', 'security', 'accessibility', 'mobile'].includes(progress.currentStep) ? (
+                        <span className="mr-4 text-green-400">✓</span>
+                      ) : (
+                        <span className="mr-4 text-slate-500">○</span>
+                      )}
+                      <span className="font-medium">ニューラルネットワーク展開</span>
+                    </div>
+                    
+                    <div className={`flex items-center transition-all duration-300 ${
+                      !progress ? 'text-slate-500' :
+                      ['seo', 'performance', 'security', 'accessibility', 'mobile'].includes(progress.currentStep) ? 'text-cyan-400' :
+                      'text-slate-500'
+                    }`}>
+                      {progress && ['seo', 'performance', 'security', 'accessibility', 'mobile'].includes(progress.currentStep) ? (
+                        <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mr-4"></div>
+                      ) : (
+                        <span className="mr-4 text-slate-500">○</span>
+                      )}
+                      <span className="font-medium">多次元解析実行</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <p className="text-slate-400 text-center mt-8 text-sm">
+              ⚡ AI駆動分析により、通常1-2分で完了します
+            </p>
           </div>
-          
-          <p className="text-xs text-gray-500 mt-6">
-            正確な分析のため、通常1-2分程度かかる場合があります
-          </p>
         </div>
       </div>
     );
@@ -428,16 +473,40 @@ const AnalysisPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+      {/* 近未来的背景装飾 */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_50%)] -z-10" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(168,85,247,0.1),transparent_50%)] -z-10" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(34,197,94,0.1),transparent_50%)] -z-10" />
+      
+      {/* アニメーション背景要素 */}
+      <div className="absolute top-20 right-20 w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
+      <div className="absolute top-40 left-20 w-1 h-1 bg-purple-400 rounded-full animate-ping" />
+      <div className="absolute bottom-40 right-40 w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
+      
       {/* ヘッダー */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4">
+      <div className="relative">
+        <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-xl border-b border-slate-700/50"></div>
+        <div className="relative container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">分析結果</h1>
-              <p className="text-gray-600 mt-1">URL: {analysisData?.url}</p>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                  T
+                </div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">
+                  分析結果レポート
+                </h1>
+              </div>
+              <p className="text-slate-400 font-mono text-sm">
+                URL: <span className="text-cyan-400">{analysisData?.url}</span>
+              </p>
             </div>
-            <Link to="/" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+            <Link 
+              to="/" 
+              className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white rounded-xl font-medium transition-all duration-300 hover:scale-105 shadow-lg"
+            >
+              <span className="mr-2">⚡</span>
               新しい分析
             </Link>
           </div>

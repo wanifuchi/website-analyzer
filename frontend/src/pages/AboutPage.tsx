@@ -168,8 +168,8 @@ const AboutPage: React.FC = () => {
         </div>
 
         {/* 利用のメリット */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
+        <div className="mb-20">
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-slate-200 to-slate-400 bg-clip-text text-transparent text-center mb-12">
             利用のメリット
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -194,8 +194,8 @@ const AboutPage: React.FC = () => {
         </div>
 
         {/* 活用シーン */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
+        <div className="mb-20">
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-slate-200 to-slate-400 bg-clip-text text-transparent text-center mb-12">
             こんな方におすすめ
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -213,8 +213,8 @@ const AboutPage: React.FC = () => {
         </div>
 
         {/* 技術情報 */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
+        <div className="mb-20">
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-slate-200 to-slate-400 bg-clip-text text-transparent text-center mb-12">
             技術情報
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -271,8 +271,8 @@ const AboutPage: React.FC = () => {
         </div>
 
         {/* よくある質問 */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
+        <div className="mb-20">
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-slate-200 to-slate-400 bg-clip-text text-transparent text-center mb-12">
             よくある質問
           </h2>
           <div className="space-y-6">
