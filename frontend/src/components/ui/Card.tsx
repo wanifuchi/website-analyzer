@@ -1,59 +1,59 @@
-import React from 'react';
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
+import { cn } from "../../lib/utils"
 
-interface CardProps {
-  children: React.ReactNode;
-  className?: string;
-  title?: string;
-  subtitle?: string;
-  action?: React.ReactNode;
-  padding?: 'none' | 'sm' | 'md' | 'lg';
-  shadow?: 'none' | 'sm' | 'md' | 'lg';
-  border?: boolean;
-  hoverable?: boolean;
+const cardVariants = cva(
+  "rounded-xl bg-white text-card-foreground transition-all duration-200",
+  {
+    variants: {
+      variant: {
+        default: "border border-gray-200 shadow-sm",
+        elevated: "shadow-lg border-0",
+        outlined: "border-2 border-gray-200 shadow-none",
+        ghost: "border-0 shadow-none bg-transparent",
+      },
+      padding: {
+        none: "",
+        sm: "p-4",
+        md: "p-6",
+        lg: "p-8",
+      },
+      hoverable: {
+        true: "hover:shadow-xl hover:-translate-y-1 cursor-pointer",
+        false: "",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      padding: "md",
+      hoverable: false,
+    },
+  }
+)
+
+export interface CardProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof cardVariants> {
+  title?: string
+  subtitle?: string
+  action?: React.ReactNode
 }
 
-const Card: React.FC<CardProps> = ({
-  children,
-  className = '',
-  title,
-  subtitle,
-  action,
-  padding = 'md',
-  shadow = 'md',
-  border = true,
-  hoverable = false
-}) => {
-  const baseClasses = 'bg-white rounded-lg';
-  
-  const paddingClasses = {
-    none: '',
-    sm: 'p-3',
-    md: 'p-4',
-    lg: 'p-6'
-  };
-
-  const shadowClasses = {
-    none: '',
-    sm: 'shadow-sm',
-    md: 'shadow-md',
-    lg: 'shadow-lg'
-  };
-
-  const borderClass = border ? 'border border-gray-200' : '';
-  const hoverClass = hoverable ? 'hover:shadow-lg transition-shadow duration-200' : '';
-
-  const classes = `${baseClasses} ${paddingClasses[padding]} ${shadowClasses[shadow]} ${borderClass} ${hoverClass} ${className}`;
-
-  return (
-    <div className={classes}>
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, variant, padding, hoverable, title, subtitle, action, children, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(cardVariants({ variant, padding, hoverable, className }))}
+      {...props}
+    >
       {(title || subtitle || action) && (
-        <div className="flex items-start justify-between mb-4">
-          <div>
+        <div className="flex items-start justify-between mb-6">
+          <div className="space-y-1">
             {title && (
-              <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+              <h3 className="text-lg font-semibold leading-none tracking-tight text-gray-900">{title}</h3>
             )}
             {subtitle && (
-              <p className="text-sm text-gray-600 mt-1">{subtitle}</p>
+              <p className="text-sm text-gray-600">{subtitle}</p>
             )}
           </div>
           {action && (
@@ -63,7 +63,7 @@ const Card: React.FC<CardProps> = ({
       )}
       {children}
     </div>
-  );
-};
+  )
+)
 
 export default Card;
