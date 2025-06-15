@@ -395,7 +395,7 @@ ${this.formatDetailedContent(detailedContent)}
     if (detailedContent.textContent) {
       const contentPreview = detailedContent.textContent.substring(0, 800);
       output += `\n【主要コンテンツ抜粋】\n`;
-      output += `"${contentPreview}${detailedContent.textContent.length > 800 ? '...' : '"}"\n`;
+      output += `"${contentPreview}${detailedContent.textContent.length > 800 ? '...' : ''}"\n`;
       output += `（全体: ${detailedContent.textContent.length}文字）\n`;
     }
 
