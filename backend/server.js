@@ -29,11 +29,274 @@ const geminiService = new GeminiAIService();
 // Search Console サービス初期化
 const searchConsoleService = new SearchConsoleService();
 
+// 詳細ページコンテンツ抽出関数
+async function extractDetailedPageContent(url) {
+  const axios = require('axios');
+  const cheerio = require('cheerio');
+  
+  console.log('📄 ページコンテンツ詳細抽出開始:', url);
+  
+  try {
+    const response = await axios.get(url, {
+      headers: { 
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      timeout: 30000,
+      maxRedirects: 5
+    });
+
+    const html = response.data;
+    const $ = cheerio.load(html);
+
+    // 1. ページタイトルとメタ情報
+    const title = $('title').text().trim();
+    const metaDescription = $('meta[name="description"]').attr('content') || '';
+    const metaKeywords = $('meta[name="keywords"]').attr('content') || '';
+
+    // 2. 見出し構造の詳細抽出
+    const headings = [];
+    $('h1, h2, h3, h4, h5, h6').each((i, elem) => {
+      const $elem = $(elem);
+      const text = $elem.text().trim();
+      const level = parseInt(elem.tagName.charAt(1));
+      if (text) {
+        headings.push({
+          level,
+          text,
+          tag: elem.tagName.toLowerCase()
+        });
+      }
+    });
+
+    // 3. 本文コンテンツの抽出（ノイズ除去）
+    // ナビゲーション、フッター、サイドバーなどを除外
+    $('nav, footer, aside, .sidebar, .menu, .navigation, .breadcrumb, .footer, .header-menu').remove();
+    $('script, style, noscript').remove();
+    
+    // メインコンテンツエリアを特定
+    const mainContentSelectors = [
+      'main', 
+      'article', 
+      '.content', 
+      '.main-content', 
+      '.post-content',
+      '.entry-content',
+      '.page-content',
+      '[role="main"]',
+      '.container .row .col' // Bootstrap等のレイアウト
+    ];
+    
+    let mainContent = '';
+    for (const selector of mainContentSelectors) {
+      const content = $(selector).first().text();
+      if (content && content.length > mainContent.length) {
+        mainContent = content;
+      }
+    }
+    
+    // メインコンテンツが見つからない場合はbody全体から抽出
+    if (!mainContent || mainContent.length < 100) {
+      mainContent = $('body').text();
+    }
+    
+    // テキストを整理（改行、空白の正規化）
+    const textContent = mainContent
+      .replace(/\s+/g, ' ')
+      .replace(/\n+/g, '\n')
+      .trim()
+      .substring(0, 5000); // 5000文字に制限（AIトークン制限対策）
+
+    // 4. 画像のALTテキスト抽出
+    const images = [];
+    $('img').each((i, elem) => {
+      const $img = $(elem);
+      const src = $img.attr('src');
+      const alt = $img.attr('alt') || '';
+      const title = $img.attr('title') || '';
+      
+      if (src && (alt || title)) {
+        images.push({
+          src: src.substring(0, 100), // URL短縮
+          alt,
+          title
+        });
+      }
+    });
+
+    // 5. リンクテキストとアンカーテキスト
+    const links = [];
+    $('a').each((i, elem) => {
+      const $link = $(elem);
+      const href = $link.attr('href');
+      const text = $link.text().trim();
+      
+      if (href && text && text.length > 1 && text.length < 100) {
+        links.push({
+          href: href.substring(0, 100),
+          text
+        });
+      }
+    });
+
+    // 6. 構造化データの抽出
+    const structuredData = [];
+    $('script[type="application/ld+json"]').each((i, elem) => {
+      try {
+        const data = JSON.parse($(elem).html());
+        if (data['@type']) {
+          structuredData.push({
+            type: data['@type'],
+            name: data.name || '',
+            description: data.description || ''
+          });
+        }
+      } catch (e) {
+        // JSON解析エラーは無視
+      }
+    });
+
+    // 7. 特徴的な固有名詞の抽出（地名、会社名、商品名等）
+    const properNouns = extractProperNouns(textContent, title);
+
+    // 8. 業界・ビジネス分野の推定
+    const businessContext = inferBusinessContext(textContent, title, headings);
+
+    const result = {
+      url,
+      title,
+      metaDescription,
+      metaKeywords,
+      headings,
+      textContent,
+      images: images.slice(0, 10), // 最大10個
+      links: links.slice(0, 20),   // 最大20個
+      structuredData,
+      properNouns,
+      businessContext,
+      contentStats: {
+        totalTextLength: textContent.length,
+        headingCount: headings.length,
+        imageCount: images.length,
+        linkCount: links.length,
+        hasStructuredData: structuredData.length > 0
+      },
+      extractedAt: new Date().toISOString()
+    };
+
+    console.log('✅ 詳細コンテンツ抽出完了:', {
+      title: title.substring(0, 50) + '...',
+      textLength: textContent.length,
+      headingsCount: headings.length,
+      properNounsCount: properNouns.length
+    });
+
+    return result;
+
+  } catch (error) {
+    console.error('❌ 詳細コンテンツ抽出エラー:', error.message);
+    return null;
+  }
+}
+
+// 固有名詞抽出関数
+function extractProperNouns(text, title) {
+  const properNouns = new Set();
+  
+  // 地名パターン（〜市、〜町、〜村、〜県、〜区等）
+  const locationPatterns = [
+    /([一-龯]{1,10}[市町村県区府道州])/g,
+    /([一-龯]{1,8}郡[一-龯]{1,8}[町村])/g
+  ];
+  
+  // 会社名パターン（〜株式会社、〜有限会社、〜商事等）
+  const companyPatterns = [
+    /([一-龯a-zA-Z]{1,20}(?:株式会社|有限会社|合同会社|商事|産業|工業|建設|商店|店舗))/g,
+    /(株式会社[一-龯a-zA-Z]{1,20})/g
+  ];
+  
+  // 商品・サービス名パターン
+  const servicePatterns = [
+    /([一-龯a-zA-Z]{2,15}(?:サービス|プラン|コース|システム|ソリューション))/g
+  ];
+
+  const allPatterns = [...locationPatterns, ...companyPatterns, ...servicePatterns];
+  const fullText = title + ' ' + text;
+  
+  allPatterns.forEach(pattern => {
+    const matches = fullText.match(pattern);
+    if (matches) {
+      matches.forEach(match => {
+        if (match.length >= 2 && match.length <= 20) {
+          properNouns.add(match);
+        }
+      });
+    }
+  });
+
+  return Array.from(properNouns).slice(0, 20); // 最大20個
+}
+
+// ビジネスコンテキスト推定関数
+function inferBusinessContext(text, title, headings) {
+  const businessKeywords = {
+    '飲食・レストラン': ['レストラン', '料理', '食事', 'メニュー', '予約', '営業時間', '定休日'],
+    '不動産': ['不動産', '物件', '賃貸', '売買', '土地', 'マンション', '戸建て'],
+    '医療・クリニック': ['病院', 'クリニック', '診療', '治療', '医師', '診察', '予約'],
+    '美容・エステ': ['美容', 'エステ', 'サロン', '施術', 'マッサージ', 'フェイシャル'],
+    '教育・塾': ['塾', '教育', '学習', '授業', '講師', '受験', 'スクール'],
+    '建設・工務店': ['建設', '工事', '施工', 'リフォーム', '住宅', '建築'],
+    '士業': ['弁護士', '税理士', '司法書士', '行政書士', '社労士', '相談'],
+    'EC・通販': ['商品', '購入', 'カート', '配送', '送料', '注文', 'ショッピング'],
+    '旅行・観光': ['旅行', '観光', 'ホテル', '宿泊', 'ツアー', 'アクセス'],
+    '自動車': ['車', '自動車', '修理', '整備', '販売', 'カー'],
+    'IT・Web': ['システム', 'ソフトウェア', 'アプリ', 'Web', 'ホームページ', 'IT']
+  };
+
+  const fullText = (title + ' ' + text + ' ' + headings.map(h => h.text).join(' ')).toLowerCase();
+  const scores = {};
+
+  Object.entries(businessKeywords).forEach(([industry, keywords]) => {
+    let score = 0;
+    keywords.forEach(keyword => {
+      const regex = new RegExp(keyword, 'gi');
+      const matches = fullText.match(regex);
+      if (matches) {
+        score += matches.length;
+      }
+    });
+    scores[industry] = score;
+  });
+
+  // 最もスコアが高い業界を返す
+  const topIndustry = Object.entries(scores).reduce((a, b) => scores[a[0]] > scores[b[0]] ? a : b);
+  
+  return {
+    primaryIndustry: topIndustry[1] > 0 ? topIndustry[0] : '一般企業・サービス',
+    confidence: topIndustry[1],
+    allScores: scores
+  };
+}
+
 // AI推奨事項生成関数（Gemini AIを使用）
 async function generateAIRecommendations(url, analysisResults) {
   console.log('🤖 AI推奨事項生成開始:', url);
   
   try {
+    // 実際のページコンテンツを詳細抽出
+    let detailedContent = null;
+    try {
+      console.log('📄 詳細コンテンツ抽出開始:', url);
+      detailedContent = await extractDetailedPageContent(url);
+      console.log('✅ 詳細コンテンツ抽出完了:', {
+        hasContent: !!detailedContent,
+        titleLength: detailedContent?.title?.length || 0,
+        headingsCount: detailedContent?.headings?.length || 0,
+        contentLength: detailedContent?.textContent?.length || 0
+      });
+    } catch (contentError) {
+      console.warn('⚠️ 詳細コンテンツ抽出失敗:', contentError.message);
+    }
+
     // Search Console データを取得して分析に活用
     let searchConsoleData = null;
     try {
@@ -48,8 +311,8 @@ async function generateAIRecommendations(url, analysisResults) {
       console.warn('⚠️ Search Console データ取得失敗:', scError.message);
     }
 
-    // Gemini AI サービスを使用して推奨事項を生成（Search Consoleデータも含む）
-    const recommendations = await geminiService.generateWebsiteRecommendations(url, analysisResults, searchConsoleData);
+    // Gemini AI サービスを使用して推奨事項を生成（詳細コンテンツとSearch Consoleデータも含む）
+    const recommendations = await geminiService.generateWebsiteRecommendations(url, analysisResults, searchConsoleData, detailedContent);
     
     console.log('✅ AI推奨事項生成完了:', {
       provider: recommendations.aiProvider,

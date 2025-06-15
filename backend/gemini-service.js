@@ -30,9 +30,10 @@ class GeminiAIService {
    * @param {string} url - 分析対象URL
    * @param {Object} analysisResults - 分析結果オブジェクト
    * @param {Object} searchConsoleData - Search Console データ（オプション）
+   * @param {Object} detailedContent - 詳細ページコンテンツ（オプション）
    * @returns {Promise<Object>} AI改善提案
    */
-  async generateWebsiteRecommendations(url, analysisResults, searchConsoleData = null) {
+  async generateWebsiteRecommendations(url, analysisResults, searchConsoleData = null, detailedContent = null) {
     if (!this.isAvailable) {
       console.log('⚠️ Gemini API利用不可、フォールバック推奨事項を返します');
       return this.getFallbackRecommendations(url, analysisResults);
@@ -41,7 +42,7 @@ class GeminiAIService {
     try {
       console.log('🤖 Gemini AI分析開始:', url);
 
-      const prompt = this.buildAnalysisPrompt(url, analysisResults, searchConsoleData);
+      const prompt = this.buildAnalysisPrompt(url, analysisResults, searchConsoleData, detailedContent);
       const result = await this.generativeModel.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
@@ -54,7 +55,7 @@ class GeminiAIService {
         // 方法1: 直接JSON解析
         const directJson = JSON.parse(text);
         console.log('✅ 直接JSON解析成功');
-        return this.formatRecommendations(directJson, url, searchConsoleData);
+        return this.formatRecommendations(directJson, url, searchConsoleData, detailedContent);
       } catch (directError) {
         console.log('⚠️ 直接JSON解析失敗:', directError.message);
         
@@ -65,7 +66,7 @@ class GeminiAIService {
             console.log('🔍 抽出されたJSON:', jsonMatch[0].substring(0, 300) + '...');
             const recommendations = JSON.parse(jsonMatch[0]);
             console.log('✅ JSONブロック解析成功');
-            return this.formatRecommendations(recommendations, url, searchConsoleData);
+            return this.formatRecommendations(recommendations, url, searchConsoleData, detailedContent);
           }
         } catch (parseError) {
           console.warn('⚠️ JSONブロック解析失敗:', parseError.message);
@@ -78,7 +79,7 @@ class GeminiAIService {
             console.log('🔍 コードブロック内JSON:', codeBlockMatch[1].substring(0, 300) + '...');
             const recommendations = JSON.parse(codeBlockMatch[1]);
             console.log('✅ コードブロック解析成功');
-            return this.formatRecommendations(recommendations, url, searchConsoleData);
+            return this.formatRecommendations(recommendations, url, searchConsoleData, detailedContent);
           }
         } catch (codeBlockError) {
           console.warn('⚠️ コードブロック解析失敗:', codeBlockError.message);
@@ -100,9 +101,10 @@ class GeminiAIService {
    * @param {string} url - URL
    * @param {Object} analysisResults - 分析結果
    * @param {Object} searchConsoleData - Search Console データ（オプション）
+   * @param {Object} detailedContent - 詳細ページコンテンツ（オプション）
    * @returns {string} プロンプト
    */
-  buildAnalysisPrompt(url, analysisResults, searchConsoleData = null) {
+  buildAnalysisPrompt(url, analysisResults, searchConsoleData = null, detailedContent = null) {
     const scores = {
       seo: analysisResults.seo?.score || 0,
       performance: analysisResults.performance?.score || 0,
@@ -140,14 +142,18 @@ ${this.formatAnalysisDetails(analysisResults)}
 🎯 【実際の検索パフォーマンスデータ】
 ${this.formatSearchConsoleData(searchConsoleData)}
 
+📄 【ページの実際のコンテンツ】
+${this.formatDetailedContent(detailedContent)}
+
 🧠 【AI分析指示】
 以下の高度な分析視点で深掘りしてください：
 
-1. **競合キーワードギャップ分析**
-   - この業界で競合が狙っているが、このサイトが取れていないキーワード
-   - 月間検索ボリュームが高く、競合性が低い「お宝キーワード」の発見
-   - ロングテールキーワードの機会損失分析
-   - 地域×サービスの掛け合わせキーワード提案
+1. **実際のコンテンツに基づく競合キーワードギャップ分析**
+   - 実際のページタイトル「${detailedContent?.title || ''}」とメタディスクリプションを考慮
+   - 実際の見出し構造とテキストコンテンツから現在のターゲットキーワードを特定
+   - 固有名詞（${detailedContent?.properNouns?.join(', ') || ''}）の正確な活用
+   - ビジネス分野「${detailedContent?.businessContext?.primaryIndustry || ''}」での競合キーワード分析
+   - 地域×サービスの掛け合わせキーワード提案（固有名詞を正確に使用）
 
 2. **検索意図マッチング分析**
    - 各ページの検索意図との一致度評価
@@ -337,6 +343,90 @@ ${this.formatSearchConsoleData(searchConsoleData)}
     }
 
     output += `\nデータソース: ${searchConsoleData.dataSource}\n`;
+
+    return output;
+  }
+
+  /**
+   * 詳細ページコンテンツをフォーマット
+   * @param {Object} detailedContent - 詳細ページコンテンツ
+   * @returns {string} フォーマットされたコンテンツ
+   */
+  formatDetailedContent(detailedContent) {
+    if (!detailedContent) {
+      return '詳細なページコンテンツが利用できません。基本的な分析で進行します。';
+    }
+
+    let output = `【実際のページコンテンツ詳細】\n`;
+    
+    // タイトルとメタ情報
+    output += `- ページタイトル: "${detailedContent.title || '未設定'}"\n`;
+    output += `- メタディスクリプション: "${detailedContent.metaDescription || '未設定'}"\n`;
+    if (detailedContent.metaKeywords) {
+      output += `- メタキーワード: "${detailedContent.metaKeywords}"\n`;
+    }
+    
+    // 見出し構造
+    if (detailedContent.headings && detailedContent.headings.length > 0) {
+      output += `\n【見出し構造】\n`;
+      detailedContent.headings.slice(0, 10).forEach((heading, index) => {
+        output += `${heading.tag.toUpperCase()}: "${heading.text}"\n`;
+      });
+      if (detailedContent.headings.length > 10) {
+        output += `...他${detailedContent.headings.length - 10}個の見出し\n`;
+      }
+    }
+
+    // 固有名詞（地名、会社名等）
+    if (detailedContent.properNouns && detailedContent.properNouns.length > 0) {
+      output += `\n【抽出された固有名詞（地名・会社名・サービス名等）】\n`;
+      output += detailedContent.properNouns.slice(0, 15).join(', ') + '\n';
+      output += `※これらの固有名詞を正確に使用してキーワード分析を行ってください\n`;
+    }
+
+    // ビジネスコンテキスト
+    if (detailedContent.businessContext) {
+      output += `\n【ビジネス分野】\n`;
+      output += `- 推定業界: ${detailedContent.businessContext.primaryIndustry}\n`;
+      output += `- 信頼度: ${detailedContent.businessContext.confidence}点\n`;
+    }
+
+    // 主要なテキストコンテンツ（抜粋）
+    if (detailedContent.textContent) {
+      const contentPreview = detailedContent.textContent.substring(0, 800);
+      output += `\n【主要コンテンツ抜粋】\n`;
+      output += `"${contentPreview}${detailedContent.textContent.length > 800 ? '...' : '"}"\n`;
+      output += `（全体: ${detailedContent.textContent.length}文字）\n`;
+    }
+
+    // 構造化データ
+    if (detailedContent.structuredData && detailedContent.structuredData.length > 0) {
+      output += `\n【構造化データ】\n`;
+      detailedContent.structuredData.forEach(data => {
+        output += `- ${data.type}: ${data.name || data.description || ''}\n`;
+      });
+    }
+
+    // 画像とALTテキスト
+    if (detailedContent.images && detailedContent.images.length > 0) {
+      output += `\n【画像ALTテキスト（上位5個）】\n`;
+      detailedContent.images.slice(0, 5).forEach((img, index) => {
+        if (img.alt) {
+          output += `${index + 1}. "${img.alt}"\n`;
+        }
+      });
+    }
+
+    // コンテンツ統計
+    if (detailedContent.contentStats) {
+      output += `\n【コンテンツ統計】\n`;
+      output += `- 総文字数: ${detailedContent.contentStats.totalTextLength}文字\n`;
+      output += `- 見出し数: ${detailedContent.contentStats.headingCount}個\n`;
+      output += `- 画像数: ${detailedContent.contentStats.imageCount}個\n`;
+      output += `- リンク数: ${detailedContent.contentStats.linkCount}個\n`;
+    }
+
+    output += `\n抽出日時: ${detailedContent.extractedAt}\n`;
 
     return output;
   }
@@ -626,17 +716,27 @@ ${this.formatSearchConsoleData(searchConsoleData)}
    * @param {string} url - URL
    * @returns {Object} フォーマットされた推奨事項
    */
-  formatRecommendations(recommendations, url, searchConsoleData = null) {
+  formatRecommendations(recommendations, url, searchConsoleData = null, detailedContent = null) {
     const result = {
       ...recommendations,
       analysisDate: new Date().toISOString(),
       url,
-      aiProvider: 'Gemini AI'
+      aiProvider: 'Gemini AI (詳細コンテンツ分析)'
     };
 
     // Search Console データがある場合は結果に含める
     if (searchConsoleData) {
       result.searchConsoleData = searchConsoleData;
+    }
+
+    // 詳細コンテンツがある場合は結果に含める
+    if (detailedContent) {
+      result.detailedContent = {
+        title: detailedContent.title,
+        properNouns: detailedContent.properNouns,
+        businessContext: detailedContent.businessContext,
+        contentStats: detailedContent.contentStats
+      };
     }
 
     return result;
