@@ -29,9 +29,10 @@ class GeminiAIService {
    * ウェブサイト分析結果を基にAI改善提案を生成
    * @param {string} url - 分析対象URL
    * @param {Object} analysisResults - 分析結果オブジェクト
+   * @param {Object} searchConsoleData - Search Console データ（オプション）
    * @returns {Promise<Object>} AI改善提案
    */
-  async generateWebsiteRecommendations(url, analysisResults) {
+  async generateWebsiteRecommendations(url, analysisResults, searchConsoleData = null) {
     if (!this.isAvailable) {
       console.log('⚠️ Gemini API利用不可、フォールバック推奨事項を返します');
       return this.getFallbackRecommendations(url, analysisResults);
@@ -40,7 +41,7 @@ class GeminiAIService {
     try {
       console.log('🤖 Gemini AI分析開始:', url);
 
-      const prompt = this.buildAnalysisPrompt(url, analysisResults);
+      const prompt = this.buildAnalysisPrompt(url, analysisResults, searchConsoleData);
       const result = await this.generativeModel.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
@@ -53,7 +54,7 @@ class GeminiAIService {
         // 方法1: 直接JSON解析
         const directJson = JSON.parse(text);
         console.log('✅ 直接JSON解析成功');
-        return this.formatRecommendations(directJson, url);
+        return this.formatRecommendations(directJson, url, searchConsoleData);
       } catch (directError) {
         console.log('⚠️ 直接JSON解析失敗:', directError.message);
         
@@ -64,7 +65,7 @@ class GeminiAIService {
             console.log('🔍 抽出されたJSON:', jsonMatch[0].substring(0, 300) + '...');
             const recommendations = JSON.parse(jsonMatch[0]);
             console.log('✅ JSONブロック解析成功');
-            return this.formatRecommendations(recommendations, url);
+            return this.formatRecommendations(recommendations, url, searchConsoleData);
           }
         } catch (parseError) {
           console.warn('⚠️ JSONブロック解析失敗:', parseError.message);
@@ -77,7 +78,7 @@ class GeminiAIService {
             console.log('🔍 コードブロック内JSON:', codeBlockMatch[1].substring(0, 300) + '...');
             const recommendations = JSON.parse(codeBlockMatch[1]);
             console.log('✅ コードブロック解析成功');
-            return this.formatRecommendations(recommendations, url);
+            return this.formatRecommendations(recommendations, url, searchConsoleData);
           }
         } catch (codeBlockError) {
           console.warn('⚠️ コードブロック解析失敗:', codeBlockError.message);
@@ -98,9 +99,10 @@ class GeminiAIService {
    * 分析プロンプトを構築
    * @param {string} url - URL
    * @param {Object} analysisResults - 分析結果
+   * @param {Object} searchConsoleData - Search Console データ（オプション）
    * @returns {string} プロンプト
    */
-  buildAnalysisPrompt(url, analysisResults) {
+  buildAnalysisPrompt(url, analysisResults, searchConsoleData = null) {
     const scores = {
       seo: analysisResults.seo?.score || 0,
       performance: analysisResults.performance?.score || 0,
@@ -134,6 +136,9 @@ URL: ${url}
 
 🔍 【検出された課題】
 ${this.formatAnalysisDetails(analysisResults)}
+
+🎯 【実際の検索パフォーマンスデータ】
+${this.formatSearchConsoleData(searchConsoleData)}
 
 🧠 【AI分析指示】
 以下の高度な分析視点で深掘りしてください：
@@ -295,6 +300,45 @@ ${this.formatAnalysisDetails(analysisResults)}
     }
 
     return details || '詳細な課題情報は利用できません。';
+  }
+
+  /**
+   * Search Console データをフォーマット
+   * @param {Object} searchConsoleData - Search Console データ
+   * @returns {string} フォーマットされたデータ
+   */
+  formatSearchConsoleData(searchConsoleData) {
+    if (!searchConsoleData || !searchConsoleData.queries || searchConsoleData.queries.length === 0) {
+      return '実際の検索データが利用できません。推定データで分析を実行します。';
+    }
+
+    const { summary, queries, opportunityAnalysis } = searchConsoleData;
+    
+    let output = `【過去30日間の実績データ】\n`;
+    output += `- 総クリック数: ${summary.totalClicks}回\n`;
+    output += `- 総表示回数: ${summary.totalImpressions}回\n`;
+    output += `- 平均CTR: ${(summary.avgCtr * 100).toFixed(2)}%\n`;
+    output += `- 平均掲載順位: ${summary.avgPosition.toFixed(1)}位\n`;
+    output += `- 対象キーワード数: ${summary.totalQueries}個\n\n`;
+
+    output += `【上位パフォーマンスキーワード（実データ）】\n`;
+    queries.slice(0, 5).forEach((query, index) => {
+      output += `${index + 1}. "${query.query}" - ${query.clicks}クリック, ${query.impressions}表示, CTR ${(query.ctr * 100).toFixed(2)}%, 順位 ${query.position.toFixed(1)}位\n`;
+    });
+
+    if (opportunityAnalysis) {
+      output += `\n【検出された改善機会】\n`;
+      if (opportunityAnalysis.quickWins && opportunityAnalysis.quickWins.length > 0) {
+        output += `即効性の高い改善機会: ${opportunityAnalysis.quickWins.length}個のキーワード\n`;
+      }
+      if (opportunityAnalysis.highImpact && opportunityAnalysis.highImpact.length > 0) {
+        output += `高インパクト改善機会: ${opportunityAnalysis.highImpact.length}個のキーワード\n`;
+      }
+    }
+
+    output += `\nデータソース: ${searchConsoleData.dataSource}\n`;
+
+    return output;
   }
 
   /**
@@ -582,13 +626,20 @@ ${this.formatAnalysisDetails(analysisResults)}
    * @param {string} url - URL
    * @returns {Object} フォーマットされた推奨事項
    */
-  formatRecommendations(recommendations, url) {
-    return {
+  formatRecommendations(recommendations, url, searchConsoleData = null) {
+    const result = {
       ...recommendations,
       analysisDate: new Date().toISOString(),
       url,
       aiProvider: 'Gemini AI'
     };
+
+    // Search Console データがある場合は結果に含める
+    if (searchConsoleData) {
+      result.searchConsoleData = searchConsoleData;
+    }
+
+    return result;
   }
 
   /**

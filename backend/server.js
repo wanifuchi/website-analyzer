@@ -10,6 +10,9 @@ const database = require('./database');
 // Gemini AI サービス
 const GeminiAIService = require('./gemini-service');
 
+// Search Console サービス
+const SearchConsoleService = require('./search-console-service');
+
 const app = express();
 const PORT = process.env.PORT || 3002;
 // Railway強制再デプロイ: 2025-01-13T20:31:00Z
@@ -23,13 +26,30 @@ let isDatabaseConnected = false;
 // Gemini AI サービス初期化
 const geminiService = new GeminiAIService();
 
+// Search Console サービス初期化
+const searchConsoleService = new SearchConsoleService();
+
 // AI推奨事項生成関数（Gemini AIを使用）
 async function generateAIRecommendations(url, analysisResults) {
   console.log('🤖 AI推奨事項生成開始:', url);
   
   try {
-    // Gemini AI サービスを使用して推奨事項を生成
-    const recommendations = await geminiService.generateWebsiteRecommendations(url, analysisResults);
+    // Search Console データを取得して分析に活用
+    let searchConsoleData = null;
+    try {
+      console.log('🔍 Search Console データ取得試行:', url);
+      searchConsoleData = await searchConsoleService.getSearchPerformance(url);
+      console.log('✅ Search Console データ取得完了:', {
+        hasData: !!searchConsoleData,
+        totalQueries: searchConsoleData?.queries?.length || 0,
+        dataSource: searchConsoleData?.dataSource
+      });
+    } catch (scError) {
+      console.warn('⚠️ Search Console データ取得失敗:', scError.message);
+    }
+
+    // Gemini AI サービスを使用して推奨事項を生成（Search Consoleデータも含む）
+    const recommendations = await geminiService.generateWebsiteRecommendations(url, analysisResults, searchConsoleData);
     
     console.log('✅ AI推奨事項生成完了:', {
       provider: recommendations.aiProvider,
@@ -159,6 +179,11 @@ app.get('/api/health', (req, res) => {
       available: geminiService.isApiAvailable(),
       model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
       keyLength: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.length : 0
+    },
+    searchConsole: {
+      configured: !!process.env.GOOGLE_SERVICE_ACCOUNT_KEY || !!process.env.GOOGLE_APPLICATION_CREDENTIALS,
+      available: searchConsoleService.isApiAvailable(),
+      authMethod: process.env.GOOGLE_SERVICE_ACCOUNT_KEY ? 'service_account_key' : process.env.GOOGLE_APPLICATION_CREDENTIALS ? 'key_file' : 'none'
     }
   });
 });
@@ -692,6 +717,66 @@ app.post('/api/ai-analysis', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'AI分析の実行中にエラーが発生しました: ' + error.message
+    });
+  }
+});
+
+// Search Console API テストエンドポイント
+app.get('/api/search-console-test', async (req, res) => {
+  try {
+    console.log('🔍 Search Console API テスト実行');
+    const testResult = await searchConsoleService.testConnection();
+    
+    res.json({
+      success: testResult.success,
+      configured: !!process.env.GOOGLE_SERVICE_ACCOUNT_KEY || !!process.env.GOOGLE_APPLICATION_CREDENTIALS,
+      available: searchConsoleService.isApiAvailable(),
+      authMethod: process.env.GOOGLE_SERVICE_ACCOUNT_KEY ? 'service_account_key' : 
+                  process.env.GOOGLE_APPLICATION_CREDENTIALS ? 'key_file' : 'none',
+      sitesCount: testResult.sitesCount || 0,
+      message: testResult.message || null,
+      error: testResult.error || null,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Search Console API テストエラー:', error);
+    res.status(500).json({
+      success: false,
+      configured: !!process.env.GOOGLE_SERVICE_ACCOUNT_KEY || !!process.env.GOOGLE_APPLICATION_CREDENTIALS,
+      available: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Search Console データ取得エンドポイント
+app.post('/api/search-console/performance', async (req, res) => {
+  try {
+    const { url, options = {} } = req.body;
+    
+    if (!url) {
+      return res.status(400).json({
+        success: false,
+        error: 'URLが必要です'
+      });
+    }
+
+    console.log('🔍 Search Console パフォーマンスデータ取得:', url);
+    
+    const performanceData = await searchConsoleService.getSearchPerformance(url, options);
+    
+    res.json({
+      success: true,
+      data: performanceData
+    });
+
+  } catch (error) {
+    console.error('❌ Search Console データ取得エラー:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Search Console データの取得に失敗しました: ' + error.message
     });
   }
 });
