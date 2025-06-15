@@ -4346,6 +4346,91 @@ function generateCSVReport(analysis) {
   ).join('\n');
 }
 
+// 改善提案チャットボットAPI
+app.post('/api/recommendation-chat', async (req, res) => {
+  try {
+    const { message, recommendation, url, chatHistory } = req.body;
+    
+    if (!message || !recommendation) {
+      return res.status(400).json({
+        success: false,
+        error: 'メッセージと改善提案データが必要です'
+      });
+    }
+
+    console.log('💬 チャットボット質問受信:', {
+      message: message.substring(0, 100),
+      recommendationTitle: recommendation.title,
+      url
+    });
+
+    if (!geminiService.isAvailable) {
+      return res.json({
+        success: true,
+        response: '申し訳ございません。現在AI機能が利用できません。しばらく経ってからもう一度お試しください。'
+      });
+    }
+
+    // チャット履歴を文字列に変換
+    const chatHistoryText = chatHistory
+      .slice(-5) // 最新5件のみ使用
+      .map(msg => `${msg.type === 'user' ? 'ユーザー' : 'アシスタント'}: ${msg.content}`)
+      .join('\n');
+
+    // Gemini AIにチャット応答を生成させる
+    const chatPrompt = `
+あなたはウェブサイト改善提案の専門アドバイザーです。以下の改善提案について、ユーザーの質問に詳しく回答してください。
+
+【改善提案情報】
+- タイトル: ${recommendation.title}
+- カテゴリ: ${recommendation.category}
+- 優先度: ${recommendation.priority}
+- 深層分析: ${recommendation.deepAnalysis || 'なし'}
+- 解決策: ${recommendation.solution || recommendation.description || 'なし'}
+- 実装方法: ${recommendation.implementation || 'なし'}
+- ビジネスインパクト: ${recommendation.businessImpact || 'なし'}
+- KPIインパクト: ${JSON.stringify(recommendation.kpiImpact || {})}
+
+【対象URL】
+${url}
+
+【これまでの会話履歴】
+${chatHistoryText}
+
+【ユーザーの質問】
+${message}
+
+【回答ガイドライン】
+1. 質問に対して具体的で実用的な回答をしてください
+2. 技術的な説明は分かりやすく、実装可能な手順で説明してください
+3. 期待される効果や ROI について具体的な数値があれば示してください
+4. 注意点やリスクがあれば必ず言及してください
+5. 日本語で自然な文体で回答してください
+6. 回答は300-500文字程度で簡潔にまとめてください
+
+回答:`;
+
+    const result = await geminiService.generativeModel.generateContent(chatPrompt);
+    const response = await result.response;
+    const chatResponse = response.text().trim();
+
+    console.log('✅ チャットボット応答生成完了');
+
+    res.json({
+      success: true,
+      response: chatResponse
+    });
+
+  } catch (error) {
+    console.error('💬 チャットボットエラー:', error);
+    res.status(500).json({
+      success: false,
+      error: 'チャット応答の生成に失敗しました',
+      details: error.message
+    });
+  }
+});
+
 // データベース初期化とサーバー起動
 async function startServer() {
   try {
@@ -4365,6 +4450,7 @@ async function startServer() {
       console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
       console.log(`🚀 Analysis API: http://localhost:${PORT}/api/analysis/start`);
       console.log(`📄 PDF/CSV Export: http://localhost:${PORT}/api/analysis/:id/pdf|csv`);
+      console.log(`💬 Chatbot API: http://localhost:${PORT}/api/recommendation-chat`);
       console.log(`📊 Database: ${isDatabaseConnected ? 'PostgreSQL' : 'In-memory'}`);
     });
     
