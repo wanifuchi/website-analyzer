@@ -41,8 +41,10 @@ async function extractDetailedPageContent(url) {
       headers: { 
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       },
-      timeout: 30000,
-      maxRedirects: 5
+      timeout: 60000, // 60秒に延長
+      maxRedirects: 5,
+      maxContentLength: 50 * 1024 * 1024, // 50MBまで許可
+      maxBodyLength: 50 * 1024 * 1024
     });
 
     const html = response.data;
@@ -193,7 +195,27 @@ async function extractDetailedPageContent(url) {
     return result;
 
   } catch (error) {
-    console.error('❌ 詳細コンテンツ抽出エラー:', error.message);
+    console.error('❌ 詳細コンテンツ抽出エラー:', {
+      message: error.message,
+      code: error.code,
+      url: url,
+      isTimeout: error.code === 'ECONNABORTED' || error.message.includes('timeout'),
+      responseStatus: error.response?.status
+    });
+    
+    // タイムアウトの場合は簡易情報を返す
+    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      return {
+        url,
+        title: 'タイムアウトにより取得できませんでした',
+        error: 'timeout',
+        textContent: '',
+        headings: [],
+        properNouns: [],
+        businessContext: { primaryIndustry: '不明', confidence: 0 }
+      };
+    }
+    
     return null;
   }
 }
@@ -282,34 +304,42 @@ async function generateAIRecommendations(url, analysisResults) {
   console.log('🤖 AI推奨事項生成開始:', url);
   
   try {
-    // 実際のページコンテンツを詳細抽出
-    let detailedContent = null;
-    try {
-      console.log('📄 詳細コンテンツ抽出開始:', url);
-      detailedContent = await extractDetailedPageContent(url);
-      console.log('✅ 詳細コンテンツ抽出完了:', {
-        hasContent: !!detailedContent,
-        titleLength: detailedContent?.title?.length || 0,
-        headingsCount: detailedContent?.headings?.length || 0,
-        contentLength: detailedContent?.textContent?.length || 0
-      });
-    } catch (contentError) {
-      console.warn('⚠️ 詳細コンテンツ抽出失敗:', contentError.message);
-    }
-
-    // Search Console データを取得して分析に活用
-    let searchConsoleData = null;
-    try {
-      console.log('🔍 Search Console データ取得試行:', url);
-      searchConsoleData = await searchConsoleService.getSearchPerformance(url);
-      console.log('✅ Search Console データ取得完了:', {
-        hasData: !!searchConsoleData,
-        totalQueries: searchConsoleData?.queries?.length || 0,
-        dataSource: searchConsoleData?.dataSource
-      });
-    } catch (scError) {
-      console.warn('⚠️ Search Console データ取得失敗:', scError.message);
-    }
+    // 詳細コンテンツ抽出とSearch Consoleデータ取得を並列実行
+    console.log('🚀 並列データ取得開始:', url);
+    
+    const [detailedContentResult, searchConsoleResult] = await Promise.allSettled([
+      // 詳細コンテンツ抽出（タイムアウト対策付き）
+      extractDetailedPageContent(url).catch(error => {
+        console.warn('⚠️ 詳細コンテンツ抽出エラー:', error.message);
+        return {
+          url,
+          title: 'コンテンツ抽出エラー',
+          error: error.message,
+          textContent: '',
+          headings: [],
+          properNouns: [],
+          businessContext: { primaryIndustry: '不明', confidence: 0 }
+        };
+      }),
+      
+      // Search Console データ取得
+      searchConsoleService.getSearchPerformance(url).catch(error => {
+        console.warn('⚠️ Search Console エラー:', error.message);
+        return null;
+      })
+    ]);
+    
+    // 結果を取得
+    const detailedContent = detailedContentResult.status === 'fulfilled' ? detailedContentResult.value : null;
+    const searchConsoleData = searchConsoleResult.status === 'fulfilled' ? searchConsoleResult.value : null;
+    
+    console.log('✅ 並列データ取得完了:', {
+      hasDetailedContent: !!detailedContent && !detailedContent.error,
+      hasSearchConsoleData: !!searchConsoleData,
+      contentError: detailedContent?.error,
+      titleLength: detailedContent?.title?.length || 0,
+      contentLength: detailedContent?.textContent?.length || 0
+    });
 
     // Gemini AI サービスを使用して推奨事項を生成（詳細コンテンツとSearch Consoleデータも含む）
     const recommendations = await geminiService.generateWebsiteRecommendations(url, analysisResults, searchConsoleData, detailedContent);

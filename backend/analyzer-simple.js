@@ -35,8 +35,10 @@ class SimpleWebAnalyzer {
       // ページのHTMLを取得
       const response = await axios.get(url, {
         headers: { 'User-Agent': this.userAgent },
-        timeout: 30000,
-        maxRedirects: 5
+        timeout: 60000, // 60秒に延長
+        maxRedirects: 5,
+        maxContentLength: 50 * 1024 * 1024, // 50MBまで許可
+        maxBodyLength: 50 * 1024 * 1024
       });
 
       const html = response.data;
