@@ -1350,6 +1350,34 @@ const AnalysisPage: React.FC = () => {
                             </div>
                           )}
                           
+                          {rec.kpiImpact && (
+                            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg border border-indigo-200">
+                              <h6 className="font-semibold text-indigo-800 mb-2 flex items-center">
+                                <span className="mr-2">📊</span>KPIインパクト
+                              </h6>
+                              <div className="grid grid-cols-3 gap-3 text-sm">
+                                {rec.kpiImpact.organicTraffic && (
+                                  <div className="text-center">
+                                    <div className="font-bold text-indigo-600">{rec.kpiImpact.organicTraffic}</div>
+                                    <div className="text-gray-600 text-xs">流入増加</div>
+                                  </div>
+                                )}
+                                {rec.kpiImpact.conversionRate && (
+                                  <div className="text-center">
+                                    <div className="font-bold text-purple-600">{rec.kpiImpact.conversionRate}</div>
+                                    <div className="text-gray-600 text-xs">CV率改善</div>
+                                  </div>
+                                )}
+                                {rec.kpiImpact.rankingImprovement && (
+                                  <div className="text-center">
+                                    <div className="font-bold text-pink-600">{rec.kpiImpact.rankingImprovement}</div>
+                                    <div className="text-gray-600 text-xs">順位向上</div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          
                           <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                             <div className="flex items-center space-x-6 flex-wrap gap-2">
                               <span className="text-green-600 font-semibold bg-green-50 px-3 py-1 rounded-full">
@@ -1374,6 +1402,89 @@ const AnalysisPage: React.FC = () => {
                 </div>
               )}
 
+              {/* キーワードギャップ分析 */}
+              {aiRecommendations.keywordGapAnalysis && (
+                <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-6 border border-purple-300">
+                  <h4 className="font-bold text-purple-900 mb-4 flex items-center">
+                    <span className="mr-2">🔍</span>
+                    競合キーワードギャップ分析
+                  </h4>
+                  <div className="space-y-4">
+                    {aiRecommendations.keywordGapAnalysis.missingKeywords && aiRecommendations.keywordGapAnalysis.missingKeywords.length > 0 && (
+                      <div>
+                        <h5 className="font-semibold text-purple-800 mb-3">📈 取りこぼしているキーワード機会</h5>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full bg-white rounded-lg overflow-hidden">
+                            <thead className="bg-purple-50">
+                              <tr>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-purple-700">キーワード</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-purple-700">月間検索数</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-purple-700">難易度</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-purple-700">機会スコア</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-purple-700">推奨コンテンツ</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                              {aiRecommendations.keywordGapAnalysis.missingKeywords.map((kw: any, index: number) => (
+                                <tr key={index} className="hover:bg-purple-50 transition-colors">
+                                  <td className="px-4 py-2 text-sm font-medium text-gray-900">{kw.keyword}</td>
+                                  <td className="px-4 py-2 text-sm text-gray-700">{kw.searchVolume}</td>
+                                  <td className="px-4 py-2 text-sm">
+                                    <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                                      parseInt(kw.difficulty) > 70 ? 'bg-red-100 text-red-700' :
+                                      parseInt(kw.difficulty) > 40 ? 'bg-yellow-100 text-yellow-700' :
+                                      'bg-green-100 text-green-700'
+                                    }`}>
+                                      {kw.difficulty}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-2 text-sm font-semibold text-purple-600">{kw.opportunity}</td>
+                                  <td className="px-4 py-2 text-sm text-gray-600">{kw.suggestedContent}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {aiRecommendations.keywordGapAnalysis.longTailOpportunities && (
+                      <div>
+                        <h5 className="font-semibold text-purple-800 mb-2">🎯 ロングテールキーワード機会</h5>
+                        <div className="flex flex-wrap gap-2">
+                          {aiRecommendations.keywordGapAnalysis.longTailOpportunities.map((keyword: string, index: number) => (
+                            <span key={index} className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm">
+                              {keyword}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {aiRecommendations.keywordGapAnalysis.localKeywords && (
+                      <div>
+                        <h5 className="font-semibold text-purple-800 mb-2">📍 地域×サービスキーワード</h5>
+                        <div className="flex flex-wrap gap-2">
+                          {aiRecommendations.keywordGapAnalysis.localKeywords.map((keyword: string, index: number) => (
+                            <span key={index} className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-sm">
+                              {keyword}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {aiRecommendations.keywordGapAnalysis.estimatedTrafficGain && (
+                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+                        <h5 className="font-semibold text-green-800 mb-1">🚀 推定流入増加</h5>
+                        <p className="text-2xl font-bold text-green-600">{aiRecommendations.keywordGapAnalysis.estimatedTrafficGain}</p>
+                        <p className="text-sm text-gray-600">これらのキーワードを獲得した場合の月間流入予測</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* 競合・市場分析 */}
               {aiRecommendations.competitiveAnalysis && (
                 <div className="bg-gradient-to-r from-cyan-100 to-blue-100 rounded-xl p-6 border border-cyan-300">
@@ -1382,29 +1493,123 @@ const AnalysisPage: React.FC = () => {
                     競合・市場分析
                   </h4>
                   <div className="space-y-4">
-                    {aiRecommendations.competitiveAnalysis.industryBenchmark && (
+                    {aiRecommendations.competitiveAnalysis.topCompetitors && (
                       <div>
-                        <h5 className="font-semibold text-cyan-800 mb-2">業界ベンチマーク</h5>
-                        <p className="text-gray-700">{aiRecommendations.competitiveAnalysis.industryBenchmark}</p>
+                        <h5 className="font-semibold text-cyan-800 mb-2">主要競合サイト</h5>
+                        <div className="flex flex-wrap gap-2">
+                          {aiRecommendations.competitiveAnalysis.topCompetitors.map((comp: string, index: number) => (
+                            <span key={index} className="bg-cyan-100 text-cyan-700 px-3 py-1 rounded-full text-sm border border-cyan-300">
+                              {comp}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     )}
-                    {aiRecommendations.competitiveAnalysis.uniqueOpportunities && (
+                    {aiRecommendations.competitiveAnalysis.competitorStrengths && (
                       <div>
-                        <h5 className="font-semibold text-cyan-800 mb-2">独自の改善機会</h5>
+                        <h5 className="font-semibold text-cyan-800 mb-2">競合の強み</h5>
                         <ul className="space-y-2">
-                          {aiRecommendations.competitiveAnalysis.uniqueOpportunities.map((opp: string, index: number) => (
+                          {aiRecommendations.competitiveAnalysis.competitorStrengths.map((strength: string, index: number) => (
                             <li key={index} className="flex items-start text-gray-700">
-                              <span className="mr-2 text-cyan-600 font-bold">•</span>
+                              <span className="mr-2 text-cyan-600 font-bold">💪</span>
+                              {strength}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {aiRecommendations.competitiveAnalysis.differentiationOpportunities && (
+                      <div>
+                        <h5 className="font-semibold text-cyan-800 mb-2">差別化の機会</h5>
+                        <ul className="space-y-2">
+                          {aiRecommendations.competitiveAnalysis.differentiationOpportunities.map((opp: string, index: number) => (
+                            <li key={index} className="flex items-start text-gray-700">
+                              <span className="mr-2 text-cyan-600 font-bold">✨</span>
                               {opp}
                             </li>
                           ))}
                         </ul>
                       </div>
                     )}
-                    {aiRecommendations.competitiveAnalysis.marketAdvantage && (
+                    {aiRecommendations.competitiveAnalysis.marketPosition && (
                       <div>
-                        <h5 className="font-semibold text-cyan-800 mb-2">競争優位性</h5>
-                        <p className="text-gray-700">{aiRecommendations.competitiveAnalysis.marketAdvantage}</p>
+                        <h5 className="font-semibold text-cyan-800 mb-2">市場ポジション</h5>
+                        <p className="text-gray-700">{aiRecommendations.competitiveAnalysis.marketPosition}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* コンテンツギャップ分析 */}
+              {aiRecommendations.contentGapAnalysis && (
+                <div className="bg-gradient-to-r from-amber-100 to-orange-100 rounded-xl p-6 border border-amber-300">
+                  <h4 className="font-bold text-amber-900 mb-4 flex items-center">
+                    <span className="mr-2">📝</span>
+                    コンテンツギャップ分析
+                  </h4>
+                  <div className="space-y-4">
+                    {aiRecommendations.contentGapAnalysis.missingTopics && (
+                      <div>
+                        <h5 className="font-semibold text-amber-800 mb-2">🎯 不足しているトピック</h5>
+                        <div className="flex flex-wrap gap-2">
+                          {aiRecommendations.contentGapAnalysis.missingTopics.map((topic: string, index: number) => (
+                            <span key={index} className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-sm border border-amber-300">
+                              {topic}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {aiRecommendations.contentGapAnalysis.contentCalendar && (
+                      <div>
+                        <h5 className="font-semibold text-amber-800 mb-3">📅 コンテンツカレンダー</h5>
+                        <div className="space-y-3">
+                          {aiRecommendations.contentGapAnalysis.contentCalendar.immediate && (
+                            <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+                              <h6 className="font-medium text-red-800 mb-1">🔥 今すぐ作成</h6>
+                              <ul className="text-sm text-gray-700 space-y-1">
+                                {aiRecommendations.contentGapAnalysis.contentCalendar.immediate.map((content: string, index: number) => (
+                                  <li key={index}>{content}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {aiRecommendations.contentGapAnalysis.contentCalendar.shortTerm && (
+                            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                              <h6 className="font-medium text-yellow-800 mb-1">⚡ 1ヶ月以内</h6>
+                              <ul className="text-sm text-gray-700 space-y-1">
+                                {aiRecommendations.contentGapAnalysis.contentCalendar.shortTerm.map((content: string, index: number) => (
+                                  <li key={index}>{content}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {aiRecommendations.contentGapAnalysis.contentCalendar.longTerm && (
+                            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                              <h6 className="font-medium text-green-800 mb-1">📋 3ヶ月以内</h6>
+                              <ul className="text-sm text-gray-700 space-y-1">
+                                {aiRecommendations.contentGapAnalysis.contentCalendar.longTerm.map((content: string, index: number) => (
+                                  <li key={index}>{content}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {aiRecommendations.contentGapAnalysis.topicClusters && (
+                      <div>
+                        <h5 className="font-semibold text-amber-800 mb-2">🎨 推奨トピッククラスター</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {aiRecommendations.contentGapAnalysis.topicClusters.map((cluster: string, index: number) => (
+                            <div key={index} className="bg-gradient-to-r from-amber-50 to-orange-50 p-3 rounded-lg border border-amber-200">
+                              <span className="text-amber-700 font-medium">{cluster}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
