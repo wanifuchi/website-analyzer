@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { pageSpeedService } from '../services/pageSpeedService';
 import { getCoreWebVitalEvaluation, getColorClasses } from '../utils/coreWebVitalsEvaluator';
 import MetricCard from '../components/MetricCard';
+import RecommendationChatbot from '../components/RecommendationChatbot';
 import html2canvas from 'html2canvas';
 
 interface AnalysisProgress {
@@ -21,6 +22,8 @@ const AnalysisPage: React.FC = () => {
   const [pageSpeedLoading, setPageSpeedLoading] = useState<boolean>(false);
   const [aiAnalysisLoading, setAiAnalysisLoading] = useState<boolean>(false);
   const [aiRecommendations, setAiRecommendations] = useState<any>(null);
+  const [selectedRecommendation, setSelectedRecommendation] = useState<any>(null);
+  const [showChatbot, setShowChatbot] = useState<boolean>(false);
   
 
 
@@ -632,6 +635,16 @@ const AnalysisPage: React.FC = () => {
       case 'F': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const handleChatbotOpen = (recommendation: any) => {
+    setSelectedRecommendation(recommendation);
+    setShowChatbot(true);
+  };
+
+  const handleChatbotClose = () => {
+    setShowChatbot(false);
+    setSelectedRecommendation(null);
   };
 
   return (
@@ -1394,10 +1407,102 @@ const AnalysisPage: React.FC = () => {
                                 </span>
                               )}
                             </div>
+                            <button
+                              onClick={() => handleChatbotOpen(rec)}
+                              className="bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-400 hover:to-cyan-400 text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:scale-105 shadow-lg flex items-center space-x-2"
+                            >
+                              <span>💬</span>
+                              <span>詳しく聞く</span>
+                            </button>
                           </div>
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Search Console データ表示 */}
+              {aiRecommendations.searchConsoleData && (
+                <div className="bg-gradient-to-r from-green-100 to-blue-100 rounded-xl p-6 border border-green-300">
+                  <h4 className="font-bold text-green-900 mb-4 flex items-center">
+                    <span className="mr-2">📊</span>
+                    実際の検索パフォーマンス（過去30日間）
+                  </h4>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-white rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-green-600">{aiRecommendations.searchConsoleData.summary?.totalClicks || 0}</div>
+                      <div className="text-sm text-gray-600">総クリック数</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-blue-600">{aiRecommendations.searchConsoleData.summary?.totalImpressions || 0}</div>
+                      <div className="text-sm text-gray-600">総表示回数</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {aiRecommendations.searchConsoleData.summary?.avgCtr ? 
+                          (aiRecommendations.searchConsoleData.summary.avgCtr * 100).toFixed(2) + '%' : '0%'}
+                      </div>
+                      <div className="text-sm text-gray-600">平均CTR</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-orange-600">
+                        {aiRecommendations.searchConsoleData.summary?.avgPosition ? 
+                          aiRecommendations.searchConsoleData.summary.avgPosition.toFixed(1) : '0'}位
+                      </div>
+                      <div className="text-sm text-gray-600">平均掲載順位</div>
+                    </div>
+                  </div>
+
+                  {/* トップパフォーマンスキーワード */}
+                  {aiRecommendations.searchConsoleData.queries && aiRecommendations.searchConsoleData.queries.length > 0 && (
+                    <div>
+                      <h5 className="font-semibold text-green-800 mb-3">🎯 トップパフォーマンスキーワード</h5>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full bg-white rounded-lg overflow-hidden">
+                          <thead className="bg-green-50">
+                            <tr>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-green-700">キーワード</th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-green-700">クリック数</th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-green-700">表示回数</th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-green-700">CTR</th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-green-700">平均順位</th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-green-700">改善機会</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {aiRecommendations.searchConsoleData.queries.slice(0, 10).map((query: any, index: number) => (
+                              <tr key={index} className="hover:bg-green-50 transition-colors">
+                                <td className="px-4 py-2 text-sm font-medium text-gray-900">{query.query}</td>
+                                <td className="px-4 py-2 text-sm text-gray-700">{query.clicks}</td>
+                                <td className="px-4 py-2 text-sm text-gray-700">{query.impressions}</td>
+                                <td className="px-4 py-2 text-sm text-gray-700">{(query.ctr * 100).toFixed(2)}%</td>
+                                <td className="px-4 py-2 text-sm text-gray-700">{query.position.toFixed(1)}位</td>
+                                <td className="px-4 py-2 text-sm">
+                                  <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                                    query.opportunity >= 7 ? 'bg-red-100 text-red-700' :
+                                    query.opportunity >= 4 ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-green-100 text-green-700'
+                                  }`}>
+                                    {query.opportunity >= 7 ? '高' : query.opportunity >= 4 ? '中' : '低'}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-4 text-xs text-gray-600 bg-white p-3 rounded-lg">
+                    データソース: {aiRecommendations.searchConsoleData.dataSource}
+                    {aiRecommendations.searchConsoleData.analysisDate && (
+                      <span className="ml-2">
+                        | 取得日時: {new Date(aiRecommendations.searchConsoleData.analysisDate).toLocaleString('ja-JP')}
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
@@ -1782,6 +1887,15 @@ const AnalysisPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* チャットボット */}
+      {showChatbot && selectedRecommendation && (
+        <RecommendationChatbot
+          recommendation={selectedRecommendation}
+          url={analysisData?.url || ''}
+          onClose={handleChatbotClose}
+        />
+      )}
     </div>
   );
 };
