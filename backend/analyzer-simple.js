@@ -1002,21 +1002,35 @@ class SimpleWebAnalyzer {
       score -= Math.min(smallTouchTargets * 3, 20);
     }
 
-    // レスポンシブデザインの指標
-    const hasMediaQueries = /<style[^>]*>[\s\S]*@media[^{]*\{[\s\S]*?\}[\s\S]*<\/style>/.test($.html());
-    const responsiveFrameworks = $('link[href*="bootstrap"], link[href*="foundation"], link[href*="bulma"], script[src*="bootstrap"]').length;
+    // レスポンシブデザインの詳細分析
+    const responsiveAnalysis = this.analyzeResponsiveDesign($, pageInfo);
     
-    if (!hasMediaQueries && responsiveFrameworks === 0) {
+    // レスポンシブデザインの総合評価
+    if (!responsiveAnalysis.isResponsive) {
       issues.push({
         type: 'error',
         message: 'レスポンシブデザインが実装されていません',
-        location: 'CSS設定（メディアクエリまたはフレームワーク）',
+        location: 'CSS設定・HTML構造',
         impact: '異なる画面サイズのデバイスでレイアウトが崩れ、ユーザビリティが大幅に低下します',
-        recommendation: 'CSSメディアクエリまたはBootstrap等のレスポンシブフレームワークを導入してください',
+        recommendation: responsiveAnalysis.recommendation,
         priority: 'high'
       });
       score -= 25;
+    } else if (responsiveAnalysis.score < 80) {
+      issues.push({
+        type: 'warning',
+        message: `レスポンシブデザインの実装が不完全です（評価: ${responsiveAnalysis.score}%）`,
+        location: 'CSS設定・HTML構造',
+        impact: '一部のデバイスサイズでレイアウトが最適化されていない可能性があります',
+        recommendation: responsiveAnalysis.recommendation,
+        priority: 'medium'
+      });
+      score -= Math.round((100 - responsiveAnalysis.score) * 0.15);
     }
+    
+    // レスポンシブ分析の詳細を保存
+    const hasMediaQueries = responsiveAnalysis.hasMediaQueries;
+    const responsiveFrameworks = responsiveAnalysis.responsiveFrameworks;
 
     // フォントサイズの分析
     const textElements = $('p, div, span, h1, h2, h3, h4, h5, h6, li, td, th').filter((i, elem) => {
@@ -1126,7 +1140,7 @@ class SimpleWebAnalyzer {
       });
     }
 
-    const isResponsive = hasViewportMeta && (hasMediaQueries || responsiveFrameworks > 0);
+    const isResponsive = responsiveAnalysis.isResponsive;
 
     return {
       score: Math.max(Math.min(score, 100), 0),
@@ -1137,6 +1151,9 @@ class SimpleWebAnalyzer {
         viewport: viewport || '未設定',
         hasMediaQueries,
         responsiveFrameworks,
+        responsiveAnalysis: responsiveAnalysis.details,
+        detectedFrameworks: responsiveAnalysis.detectedFrameworks,
+        responsiveIndicators: responsiveAnalysis.responsiveIndicators,
         clickableElements: clickableElements.length,
         smallTouchTargets,
         totalImages: images.length,
@@ -1325,6 +1342,188 @@ class SimpleWebAnalyzer {
 
   getDefaultMobileResults() {
     return { score: 50, issues: [], details: {}, isResponsive: false };
+  }
+
+  /**
+   * レスポンシブデザインの詳細分析
+   * @param {object} $ - Cheerio オブジェクト
+   * @param {object} pageInfo - ページ情報
+   * @returns {object} レスポンシブ分析結果
+   */
+  analyzeResponsiveDesign($, pageInfo) {
+    let score = 0;
+    let responsiveIndicators = [];
+    let recommendations = [];
+
+    // 1. ビューポートメタタグの確認（必須条件）
+    const viewport = $('meta[name="viewport"]').attr('content');
+    const hasViewportMeta = !!viewport;
+    
+    if (hasViewportMeta) {
+      score += 25;
+      responsiveIndicators.push('ビューポートメタタグ設定済み');
+      
+      if (viewport.includes('width=device-width')) {
+        score += 15;
+        responsiveIndicators.push('適切なビューポート幅設定');
+      }
+    } else {
+      recommendations.push('ビューポートメタタグを追加してください: <meta name="viewport" content="width=device-width, initial-scale=1.0">');
+    }
+
+    // 2. CSSメディアクエリの検出（複数の方法）
+    const html = $.html();
+    let hasMediaQueries = false;
+    
+    // 内部スタイルのメディアクエリ
+    const inlineMediaQueries = /<style[^>]*>[\s\S]*?@media[^{]*\{[\s\S]*?\}[\s\S]*?<\/style>/gi.test(html);
+    
+    // CSSファイルのリンクから推測
+    const cssLinks = $('link[rel="stylesheet"]');
+    const hasCssFiles = cssLinks.length > 0;
+    
+    // レスポンシブを示唆するCSSクラス名の検出
+    const responsiveClassPatterns = [
+      /\b(col-|row-|grid-|flex-|responsive|mobile|tablet|desktop)\b/gi,
+      /\b(sm-|md-|lg-|xl-|xs-)\b/gi,
+      /\b(container|wrapper|layout)\b/gi
+    ];
+    
+    let hasResponsiveClasses = false;
+    responsiveClassPatterns.forEach(pattern => {
+      if (pattern.test(html)) {
+        hasResponsiveClasses = true;
+      }
+    });
+
+    if (inlineMediaQueries) {
+      hasMediaQueries = true;
+      score += 20;
+      responsiveIndicators.push('内部CSSメディアクエリ検出');
+    }
+    
+    if (hasCssFiles) {
+      // 外部CSSファイルがある場合、レスポンシブの可能性が高い
+      score += 10;
+      responsiveIndicators.push('外部CSSファイル使用');
+    }
+    
+    if (hasResponsiveClasses) {
+      score += 15;
+      responsiveIndicators.push('レスポンシブクラス名検出');
+    }
+
+    // 3. レスポンシブフレームワークの詳細検出
+    const frameworkPatterns = {
+      'Bootstrap': ['bootstrap', 'bs-', 'container-fluid'],
+      'Foundation': ['foundation', 'row', 'columns'],
+      'Bulma': ['bulma', 'is-', 'has-'],
+      'Tailwind CSS': ['tailwind', 'sm:', 'md:', 'lg:', 'xl:'],
+      'Material UI': ['mui-', 'material-ui'],
+      'Semantic UI': ['ui container', 'ui grid'],
+      'CSS Grid': ['grid-template', 'grid-area'],
+      'Flexbox': ['flex', 'justify-', 'align-']
+    };
+
+    let detectedFrameworks = [];
+    let responsiveFrameworks = 0;
+
+    Object.entries(frameworkPatterns).forEach(([framework, patterns]) => {
+      const hasFramework = patterns.some(pattern => 
+        html.toLowerCase().includes(pattern.toLowerCase()) ||
+        $(`link[href*="${pattern}"], script[src*="${pattern}"]`).length > 0
+      );
+      
+      if (hasFramework) {
+        detectedFrameworks.push(framework);
+        responsiveFrameworks++;
+        score += 15;
+      }
+    });
+
+    if (detectedFrameworks.length > 0) {
+      responsiveIndicators.push(`フレームワーク: ${detectedFrameworks.join(', ')}`);
+    }
+
+    // 4. モダンCSS技術の検出
+    const modernCssFeatures = [
+      { name: 'CSS Grid', pattern: /grid-template|display:\s*grid/gi },
+      { name: 'Flexbox', pattern: /display:\s*flex|flex-direction/gi },
+      { name: 'CSS Variables', pattern: /--[\w-]+:|var\(/gi },
+      { name: 'Container Queries', pattern: /@container/gi }
+    ];
+
+    modernCssFeatures.forEach(feature => {
+      if (feature.pattern.test(html)) {
+        score += 8;
+        responsiveIndicators.push(`${feature.name}使用`);
+      }
+    });
+
+    // 5. HTML構造からの推測
+    const layoutElements = $('header, nav, main, section, article, aside, footer');
+    if (layoutElements.length >= 3) {
+      score += 5;
+      responsiveIndicators.push('セマンティックHTML構造');
+    }
+
+    // 6. 画像のレスポンシブ対応チェック
+    const responsiveImages = $('img[srcset], img[sizes], picture source').length;
+    const totalImages = $('img').length;
+    
+    if (totalImages > 0) {
+      const responsiveImageRatio = responsiveImages / totalImages;
+      if (responsiveImageRatio > 0.5) {
+        score += 10;
+        responsiveIndicators.push('レスポンシブ画像使用');
+      } else if (responsiveImageRatio > 0) {
+        score += 5;
+        responsiveIndicators.push('一部レスポンシブ画像使用');
+      }
+    }
+
+    // 最終的な判定
+    const isResponsive = score >= 40 && hasViewportMeta;
+    
+    // 推奨事項の生成
+    if (!isResponsive) {
+      if (!hasViewportMeta) {
+        recommendations.push('ビューポートメタタグを追加してください');
+      }
+      if (!hasMediaQueries && responsiveFrameworks === 0) {
+        recommendations.push('CSSメディアクエリまたはレスポンシブフレームワークを実装してください');
+      }
+      if (detectedFrameworks.length === 0) {
+        recommendations.push('Bootstrap、Tailwind CSS等のレスポンシブフレームワークの採用を検討してください');
+      }
+    } else if (score < 80) {
+      if (responsiveImages === 0 && totalImages > 0) {
+        recommendations.push('画像のレスポンシブ対応（srcset、sizes属性）を追加してください');
+      }
+      if (!hasResponsiveClasses) {
+        recommendations.push('レスポンシブグリッドシステムの活用を検討してください');
+      }
+    }
+
+    return {
+      isResponsive,
+      score: Math.min(score, 100),
+      hasMediaQueries: hasMediaQueries || responsiveFrameworks > 0,
+      responsiveFrameworks,
+      detectedFrameworks,
+      responsiveIndicators,
+      recommendation: recommendations.length > 0 ? recommendations.join(' ') : 'レスポンシブデザインが適切に実装されています',
+      details: {
+        viewport: viewport || '未設定',
+        hasViewportMeta,
+        inlineMediaQueries,
+        hasCssFiles,
+        hasResponsiveClasses,
+        responsiveImages,
+        totalImages,
+        modernCssFeatures: modernCssFeatures.filter(f => f.pattern.test(html)).map(f => f.name)
+      }
+    };
   }
 }
 
