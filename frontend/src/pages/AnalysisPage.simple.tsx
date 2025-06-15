@@ -19,6 +19,8 @@ const AnalysisPage: React.FC = () => {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [progress, setProgress] = useState<AnalysisProgress | null>(null);
   const [pageSpeedLoading, setPageSpeedLoading] = useState<boolean>(false);
+  const [aiAnalysisLoading, setAiAnalysisLoading] = useState<boolean>(false);
+  const [aiRecommendations, setAiRecommendations] = useState<any>(null);
   
 
 
@@ -503,6 +505,121 @@ const AnalysisPage: React.FC = () => {
       setTimeout(() => {
         notification.remove();
       }, 3000);
+    }
+  };
+
+  const handleAIAnalysis = async () => {
+    if (!analysisData?.url) {
+      console.error('分析データまたはURLが不足しています');
+      return;
+    }
+
+    setAiAnalysisLoading(true);
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002';
+      
+      console.log('🤖 AI分析リクエスト送信:', {
+        url: API_BASE_URL + '/api/ai-analysis',
+        requestData: {
+          url: analysisData.url,
+          analysisResults: analysisData.results
+        }
+      });
+
+      // 分析データを軽量化（大容量データを除外）
+      const lightweightResults = analysisData.results ? {
+        seo: {
+          score: analysisData.results.seo?.score || 0,
+          issues: (analysisData.results.seo?.issues || []).slice(0, 5) // 最大5件に制限
+        },
+        performance: {
+          score: analysisData.results.performance?.score || 0,
+          loadTime: analysisData.results.performance?.loadTime,
+          firstContentfulPaint: analysisData.results.performance?.firstContentfulPaint,
+          issues: (analysisData.results.performance?.issues || []).slice(0, 5)
+        },
+        security: {
+          score: analysisData.results.security?.score || 0,
+          issues: (analysisData.results.security?.issues || []).slice(0, 5)
+        },
+        accessibility: {
+          score: analysisData.results.accessibility?.score || 0,
+          issues: (analysisData.results.accessibility?.issues || []).slice(0, 5)
+        },
+        mobile: {
+          score: analysisData.results.mobile?.score || 0,
+          issues: (analysisData.results.mobile?.issues || []).slice(0, 5)
+        }
+      } : {};
+
+      const requestPayload = {
+        url: analysisData.url,
+        analysisResults: lightweightResults
+      };
+
+      console.log('🤖 軽量化されたAI分析リクエスト送信:', {
+        url: API_BASE_URL + '/api/ai-analysis',
+        payloadSize: JSON.stringify(requestPayload).length + ' bytes'
+      });
+
+      const response = await fetch(`${API_BASE_URL}/api/ai-analysis`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestPayload),
+      });
+
+      console.log('🤖 AI分析レスポンス:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API エラーレスポンス:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('🤖 AI分析結果:', data);
+      
+      if (data.success) {
+        setAiRecommendations(data.recommendations);
+        // 成功通知
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-xl shadow-lg z-50';
+        notification.textContent = '🤖 AI分析が完了しました';
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          notification.remove();
+        }, 3000);
+
+        // AI分析結果にスクロール
+        setTimeout(() => {
+          document.getElementById('ai-recommendations')?.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+          });
+        }, 100);
+      } else {
+        throw new Error(data.error || 'AI分析に失敗しました');
+      }
+    } catch (error) {
+      console.error('AI分析エラー詳細:', error);
+      
+      // 詳細なエラー通知
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 max-w-md';
+      notification.innerHTML = `
+        <div class="font-bold">❌ AI分析エラー</div>
+        <div class="text-sm mt-1">${error.message || 'Unknown error'}</div>
+      `;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 5000);
+    } finally {
+      setAiAnalysisLoading(false);
     }
   };
 
@@ -1097,7 +1214,7 @@ const AnalysisPage: React.FC = () => {
         )}
 
         {/* アクションボタン */}
-        <div className="mt-8 flex justify-center">
+        <div className="mt-8 flex justify-center space-x-4">
           <button 
             onClick={handleScreenshot}
             className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-8 py-4 rounded-xl flex items-center font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
@@ -1105,7 +1222,345 @@ const AnalysisPage: React.FC = () => {
             <span className="mr-3 text-lg">📸</span>
             高品質スクリーンショットを保存
           </button>
+          
+          <button 
+            onClick={handleAIAnalysis}
+            disabled={aiAnalysisLoading}
+            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:from-gray-400 disabled:to-gray-500 text-white px-8 py-4 rounded-xl flex items-center font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed"
+          >
+            {aiAnalysisLoading ? (
+              <>
+                <div className="mr-3 w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                AI分析中...
+              </>
+            ) : (
+              <>
+                <span className="mr-3 text-lg">🤖</span>
+                AIで更に改修点を解析
+              </>
+            )}
+          </button>
+          
+          {/* デバッグ情報表示 */}
+          {process.env.NODE_ENV === 'development' && (
+            <button 
+              onClick={() => {
+                console.log('デバッグ情報:', {
+                  analysisData,
+                  env: import.meta.env.VITE_API_BASE_URL,
+                  url: analysisData?.url,
+                  results: analysisData?.results
+                });
+              }}
+              className="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded text-sm"
+            >
+              🐛 Debug
+            </button>
+          )}
         </div>
+
+        {/* AI深層分析結果 */}
+        {aiRecommendations && (
+          <div id="ai-recommendations" className="mt-8 bg-gradient-to-r from-purple-50 to-cyan-50 rounded-2xl shadow-2xl p-8 border border-purple-200">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center bg-gradient-to-r from-purple-600 to-cyan-600 text-white px-6 py-3 rounded-full mb-4">
+                <span className="mr-3 text-2xl">🧠</span>
+                <span className="text-xl font-bold">AI深層分析レポート</span>
+              </div>
+              <p className="text-gray-600">Gemini 2.0による革新的ウェブサイト最適化戦略</p>
+            </div>
+            
+            <div className="space-y-8">
+              {/* AI深層分析概要 */}
+              {aiRecommendations.summary && (
+                <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl p-6 border border-purple-300">
+                  <h4 className="font-bold text-purple-900 mb-3 flex items-center">
+                    <span className="mr-2">🎯</span>
+                    深層洞察サマリー
+                  </h4>
+                  <p className="text-gray-800 text-lg leading-relaxed">{aiRecommendations.summary}</p>
+                </div>
+              )}
+
+              {/* 戦略的改善提案 */}
+              {(aiRecommendations.strategicRecommendations || aiRecommendations.recommendations) && (aiRecommendations.strategicRecommendations || aiRecommendations.recommendations).length > 0 && (
+                <div>
+                  <h4 className="font-bold text-purple-900 mb-6 text-xl">🚀 戦略的改善提案</h4>
+                  <div className="space-y-6">
+                    {(aiRecommendations.strategicRecommendations || aiRecommendations.recommendations).map((rec: any, index: number) => (
+                      <div key={index} className="bg-white rounded-xl p-6 border-2 border-gray-200 hover:border-purple-300 transition-all duration-300 shadow-lg">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center mb-3 flex-wrap gap-2">
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold mr-2 ${
+                                rec.priority === 'critical' ? 'bg-red-100 text-red-800 border-2 border-red-300' :
+                                rec.priority === 'high' ? 'bg-orange-100 text-orange-800 border-2 border-orange-300' :
+                                'bg-green-100 text-green-800 border-2 border-green-300'
+                              }`}>
+                                {rec.priority === 'critical' ? '🔥 最重要' :
+                                 rec.priority === 'high' ? '⚡ 高優先度' : '✅ 中優先度'}
+                              </span>
+                              <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium border border-purple-300">
+                                {rec.category}
+                              </span>
+                              {rec.difficulty && (
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  rec.difficulty === 'easy' ? 'bg-green-50 text-green-700 border border-green-200' :
+                                  rec.difficulty === 'medium' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
+                                  'bg-red-50 text-red-700 border border-red-200'
+                                }`}>
+                                  難易度: {rec.difficulty}
+                                </span>
+                              )}
+                            </div>
+                            <h5 className="text-xl font-bold text-gray-900 mb-3">{rec.title}</h5>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          {rec.deepAnalysis && (
+                            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                              <h6 className="font-semibold text-purple-800 mb-2 flex items-center">
+                                <span className="mr-2">🔍</span>深層分析
+                              </h6>
+                              <p className="text-gray-700 leading-relaxed">{rec.deepAnalysis}</p>
+                            </div>
+                          )}
+                          
+                          <div className="bg-cyan-50 p-4 rounded-lg border border-cyan-200">
+                            <h6 className="font-semibold text-cyan-800 mb-2 flex items-center">
+                              <span className="mr-2">💡</span>解決策
+                            </h6>
+                            <p className="text-gray-700 leading-relaxed">{rec.solution || rec.description}</p>
+                          </div>
+                          
+                          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                            <h6 className="font-semibold text-green-800 mb-2 flex items-center">
+                              <span className="mr-2">📋</span>実装ロードマップ
+                            </h6>
+                            <p className="text-gray-700 leading-relaxed">{rec.implementation}</p>
+                          </div>
+                          
+                          {rec.businessImpact && (
+                            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                              <h6 className="font-semibold text-yellow-800 mb-2 flex items-center">
+                                <span className="mr-2">💼</span>ビジネスインパクト
+                              </h6>
+                              <p className="text-gray-700 leading-relaxed">{rec.businessImpact}</p>
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                            <div className="flex items-center space-x-6 flex-wrap gap-2">
+                              <span className="text-green-600 font-semibold bg-green-50 px-3 py-1 rounded-full">
+                                📈 効果: {rec.expectedResults || rec.impact}
+                              </span>
+                              {rec.timeframe && (
+                                <span className="text-blue-600 font-semibold bg-blue-50 px-3 py-1 rounded-full">
+                                  ⏱️ 期間: {rec.timeframe}
+                                </span>
+                              )}
+                              {rec.roi && (
+                                <span className="text-yellow-600 font-semibold bg-yellow-50 px-3 py-1 rounded-full">
+                                  💰 ROI: {rec.roi}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 競合・市場分析 */}
+              {aiRecommendations.competitiveAnalysis && (
+                <div className="bg-gradient-to-r from-cyan-100 to-blue-100 rounded-xl p-6 border border-cyan-300">
+                  <h4 className="font-bold text-cyan-900 mb-4 flex items-center">
+                    <span className="mr-2">🏆</span>
+                    競合・市場分析
+                  </h4>
+                  <div className="space-y-4">
+                    {aiRecommendations.competitiveAnalysis.industryBenchmark && (
+                      <div>
+                        <h5 className="font-semibold text-cyan-800 mb-2">業界ベンチマーク</h5>
+                        <p className="text-gray-700">{aiRecommendations.competitiveAnalysis.industryBenchmark}</p>
+                      </div>
+                    )}
+                    {aiRecommendations.competitiveAnalysis.uniqueOpportunities && (
+                      <div>
+                        <h5 className="font-semibold text-cyan-800 mb-2">独自の改善機会</h5>
+                        <ul className="space-y-2">
+                          {aiRecommendations.competitiveAnalysis.uniqueOpportunities.map((opp: string, index: number) => (
+                            <li key={index} className="flex items-start text-gray-700">
+                              <span className="mr-2 text-cyan-600 font-bold">•</span>
+                              {opp}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {aiRecommendations.competitiveAnalysis.marketAdvantage && (
+                      <div>
+                        <h5 className="font-semibold text-cyan-800 mb-2">競争優位性</h5>
+                        <p className="text-gray-700">{aiRecommendations.competitiveAnalysis.marketAdvantage}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ユーザージャーニー最適化 */}
+              {aiRecommendations.userJourneyOptimization && (
+                <div className="bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl p-6 border border-blue-300">
+                  <h4 className="font-bold text-blue-900 mb-4 flex items-center">
+                    <span className="mr-2">👥</span>
+                    ユーザージャーニー最適化
+                  </h4>
+                  <div className="space-y-4">
+                    {aiRecommendations.userJourneyOptimization.currentPainPoints && (
+                      <div>
+                        <h5 className="font-semibold text-blue-800 mb-2">痛点分析</h5>
+                        <ul className="space-y-2">
+                          {aiRecommendations.userJourneyOptimization.currentPainPoints.map((point: string, index: number) => (
+                            <li key={index} className="flex items-start text-gray-700">
+                              <span className="mr-2 text-red-500 font-bold">⚠</span>
+                              {point}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {aiRecommendations.userJourneyOptimization.optimizedFlow && (
+                      <div>
+                        <h5 className="font-semibold text-blue-800 mb-2">最適化フロー</h5>
+                        <p className="text-gray-700">{aiRecommendations.userJourneyOptimization.optimizedFlow}</p>
+                      </div>
+                    )}
+                    {aiRecommendations.userJourneyOptimization.conversionStrategy && (
+                      <div>
+                        <h5 className="font-semibold text-blue-800 mb-2">コンバージョン戦略</h5>
+                        <p className="text-gray-700">{aiRecommendations.userJourneyOptimization.conversionStrategy}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 実装ロードマップ */}
+              {aiRecommendations.implementationRoadmap && (
+                <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-6 border border-green-300">
+                  <h4 className="font-bold text-green-900 mb-4 flex items-center">
+                    <span className="mr-2">🗺️</span>
+                    実装ロードマップ
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {aiRecommendations.implementationRoadmap.phase1 && (
+                      <div className="bg-white p-4 rounded-lg border border-green-200">
+                        <h5 className="font-bold text-green-700 mb-2">Phase 1</h5>
+                        <p className="text-gray-700 text-sm">{aiRecommendations.implementationRoadmap.phase1}</p>
+                      </div>
+                    )}
+                    {aiRecommendations.implementationRoadmap.phase2 && (
+                      <div className="bg-white p-4 rounded-lg border border-blue-200">
+                        <h5 className="font-bold text-blue-700 mb-2">Phase 2</h5>
+                        <p className="text-gray-700 text-sm">{aiRecommendations.implementationRoadmap.phase2}</p>
+                      </div>
+                    )}
+                    {aiRecommendations.implementationRoadmap.phase3 && (
+                      <div className="bg-white p-4 rounded-lg border border-purple-200">
+                        <h5 className="font-bold text-purple-700 mb-2">Phase 3</h5>
+                        <p className="text-gray-700 text-sm">{aiRecommendations.implementationRoadmap.phase3}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* データ分析推奨事項 */}
+              {aiRecommendations.dataAnalysisRecommendations && (
+                <div className="bg-gradient-to-r from-yellow-100 to-orange-100 rounded-xl p-6 border border-yellow-300">
+                  <h4 className="font-bold text-yellow-900 mb-4 flex items-center">
+                    <span className="mr-2">📈</span>
+                    データ分析・改善推奨
+                  </h4>
+                  <div className="space-y-4">
+                    {aiRecommendations.dataAnalysisRecommendations.abTestIdeas && (
+                      <div>
+                        <h5 className="font-semibold text-yellow-800 mb-2">A/Bテスト提案</h5>
+                        <ul className="space-y-2">
+                          {aiRecommendations.dataAnalysisRecommendations.abTestIdeas.map((idea: string, index: number) => (
+                            <li key={index} className="flex items-start text-gray-700">
+                              <span className="mr-2 text-yellow-600 font-bold">🧪</span>
+                              {idea}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {aiRecommendations.dataAnalysisRecommendations.kpiTracking && (
+                      <div>
+                        <h5 className="font-semibold text-yellow-800 mb-2">追跡すべきKPI</h5>
+                        <p className="text-gray-700">{aiRecommendations.dataAnalysisRecommendations.kpiTracking}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 推定改善効果 */}
+              {aiRecommendations.expectedImpact && (
+                <div className="bg-gradient-to-r from-emerald-100 to-green-100 rounded-xl p-6 border border-emerald-300">
+                  <h4 className="font-bold text-emerald-900 mb-4 flex items-center">
+                    <span className="mr-2">📊</span>
+                    期待される改善効果
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {aiRecommendations.expectedImpact.seo && (
+                      <div className="text-center bg-white p-4 rounded-lg border border-green-200">
+                        <div className="text-2xl font-bold text-green-600 mb-1">
+                          {typeof aiRecommendations.expectedImpact.seo === 'string' ? 
+                            aiRecommendations.expectedImpact.seo : 
+                            `+${aiRecommendations.expectedImpact.seo}点`}
+                        </div>
+                        <div className="text-gray-600 text-sm font-medium">SEOスコア</div>
+                      </div>
+                    )}
+                    {aiRecommendations.expectedImpact.performance && (
+                      <div className="text-center bg-white p-4 rounded-lg border border-blue-200">
+                        <div className="text-2xl font-bold text-blue-600 mb-1">
+                          {typeof aiRecommendations.expectedImpact.performance === 'string' ? 
+                            aiRecommendations.expectedImpact.performance : 
+                            `+${aiRecommendations.expectedImpact.performance}点`}
+                        </div>
+                        <div className="text-gray-600 text-sm font-medium">パフォーマンス</div>
+                      </div>
+                    )}
+                    {aiRecommendations.expectedImpact.conversion && (
+                      <div className="text-center bg-white p-4 rounded-lg border border-purple-200">
+                        <div className="text-2xl font-bold text-purple-600 mb-1">
+                          {aiRecommendations.expectedImpact.conversion}
+                        </div>
+                        <div className="text-gray-600 text-sm font-medium">コンバージョン</div>
+                      </div>
+                    )}
+                    {aiRecommendations.expectedImpact.overall && (
+                      <div className="text-center bg-white p-4 rounded-lg border border-cyan-200">
+                        <div className="text-2xl font-bold text-cyan-600 mb-1">
+                          {typeof aiRecommendations.expectedImpact.overall === 'string' ? 
+                            aiRecommendations.expectedImpact.overall : 
+                            `+${aiRecommendations.expectedImpact.overall}点`}
+                        </div>
+                        <div className="text-gray-600 text-sm font-medium">総合スコア</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* 分析情報 */}
         {analysisData?.status === 'failed' && analysisData?.results ? (

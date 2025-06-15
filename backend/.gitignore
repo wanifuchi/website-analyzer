@@ -1,0 +1,35 @@
+# 環境変数ファイル（APIキーを含む）
+.env
+.env.local
+.env.production
+
+# ログファイル
+logs/
+*.log
+
+# データベースファイル
+*.db
+*.sqlite
+
+# 依存関係
+node_modules/
+
+# 一時ファイル
+tmp/
+temp/
+
+# レポートファイル
+reports/
+
+# OS固有ファイル
+.DS_Store
+Thumbs.db
+
+# IDEファイル
+.vscode/
+.idea/
+
+# 秘匿情報を含む可能性のあるファイル
+config/secrets.json
+credentials.json
+service-account.json

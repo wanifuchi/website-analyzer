@@ -7,6 +7,9 @@ require('dotenv').config();
 // データベース接続
 const database = require('./database');
 
+// Gemini AI サービス
+const GeminiAIService = require('./gemini-service');
+
 const app = express();
 const PORT = process.env.PORT || 3002;
 // Railway強制再デプロイ: 2025-01-13T20:31:00Z
@@ -16,6 +19,54 @@ const analyses = new Map();
 
 // データベース利用可能かチェック
 let isDatabaseConnected = false;
+
+// Gemini AI サービス初期化
+const geminiService = new GeminiAIService();
+
+// AI推奨事項生成関数（Gemini AIを使用）
+async function generateAIRecommendations(url, analysisResults) {
+  console.log('🤖 AI推奨事項生成開始:', url);
+  
+  try {
+    // Gemini AI サービスを使用して推奨事項を生成
+    const recommendations = await geminiService.generateWebsiteRecommendations(url, analysisResults);
+    
+    console.log('✅ AI推奨事項生成完了:', {
+      provider: recommendations.aiProvider,
+      recommendationCount: recommendations.recommendations?.length || 0,
+      summary: recommendations.summary?.substring(0, 100) + '...'
+    });
+    
+    return recommendations;
+
+  } catch (error) {
+    console.error('❌ AI推奨事項生成エラー:', error);
+    
+    // 完全フォールバック
+    return {
+      summary: 'AI分析中に問題が発生しました。基本的な改善提案を提供します。',
+      recommendations: [
+        {
+          category: '一般',
+          priority: 'medium',
+          title: '基本的なウェブサイト最適化',
+          description: 'サイトの基本的な最適化を行うことで、ユーザー体験と検索エンジンでのパフォーマンスを向上させることができます。',
+          implementation: '画像の最適化、メタタグの設定、読み込み速度の改善を実施してください。',
+          impact: '+10-20点',
+          estimatedHours: '2-5時間'
+        }
+      ],
+      expectedImpact: {
+        seo: 10,
+        performance: 15,
+        overall: 10
+      },
+      analysisDate: new Date().toISOString(),
+      url,
+      aiProvider: 'Fallback (エラー時)'
+    };
+  }
+}
 
 // データベースまたはメモリから分析データを取得
 async function getAnalysisData(analysisId) {
@@ -77,7 +128,15 @@ app.use(cors({
   preflightContinue: false,
   optionsSuccessStatus: 200
 }));
-app.use(express.json());
+// Body parser設定（大容量データ対応）
+app.use(express.json({ 
+  limit: '50mb',  // JSON解析の制限を50MBに拡張
+  extended: true 
+}));
+app.use(express.urlencoded({ 
+  limit: '50mb',  // URLエンコード解析の制限を50MBに拡張
+  extended: true 
+}));
 
 // ヘルスチェック
 app.get('/api/health', (req, res) => {
@@ -94,8 +153,42 @@ app.get('/api/health', (req, res) => {
       configured: !!process.env.GOOGLE_PAGESPEED_API_KEY,
       keyLength: process.env.GOOGLE_PAGESPEED_API_KEY ? process.env.GOOGLE_PAGESPEED_API_KEY.length : 0,
       endpoint: process.env.PAGESPEED_API_ENDPOINT || 'default'
+    },
+    geminiAI: {
+      configured: !!process.env.GEMINI_API_KEY,
+      available: geminiService.isApiAvailable(),
+      model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
+      keyLength: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.length : 0
     }
   });
+});
+
+// Gemini API テストエンドポイント
+app.get('/api/gemini-test', async (req, res) => {
+  try {
+    console.log('🤖 Gemini API テスト実行');
+    const testResult = await geminiService.testAPI();
+    
+    res.json({
+      success: testResult.success,
+      configured: !!process.env.GEMINI_API_KEY,
+      available: geminiService.isApiAvailable(),
+      model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
+      testResponse: testResult.response?.substring(0, 200) + '...' || null,
+      error: testResult.error || null,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('❌ Gemini API テストエラー:', error);
+    res.status(500).json({
+      success: false,
+      configured: !!process.env.GEMINI_API_KEY,
+      available: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // PageSpeed API テストエンドポイント
@@ -559,6 +652,50 @@ app.get('/api/analysis/:id/pdf', async (req, res) => {
 });
 
 // CSVエクスポート
+// AI分析エンドポイント
+app.post('/api/ai-analysis', async (req, res) => {
+  console.log('🤖 AI分析エンドポイントにリクエスト受信');
+  console.log('📋 リクエストボディ:', JSON.stringify(req.body, null, 2));
+  
+  try {
+    const { url, analysisResults } = req.body;
+    
+    if (!url || !analysisResults) {
+      console.error('❌ 必要なデータが不足:', { url: !!url, analysisResults: !!analysisResults });
+      return res.status(400).json({
+        success: false,
+        error: 'URLと分析結果が必要です'
+      });
+    }
+
+    console.log('🤖 AI分析リクエスト:', { 
+      url, 
+      hasResults: !!analysisResults,
+      resultKeys: Object.keys(analysisResults || {})
+    });
+
+    // AI分析を実行
+    const recommendations = await generateAIRecommendations(url, analysisResults);
+
+    console.log('✅ AI分析完了:', { 
+      recommendationCount: recommendations.recommendations?.length || 0,
+      summary: recommendations.summary?.substring(0, 100) + '...'
+    });
+
+    res.json({
+      success: true,
+      recommendations
+    });
+
+  } catch (error) {
+    console.error('❌ AI分析エラー:', error);
+    res.status(500).json({
+      success: false,
+      error: 'AI分析の実行中にエラーが発生しました: ' + error.message
+    });
+  }
+});
+
 app.get('/api/analysis/:id/csv', async (req, res) => {
   try {
     const { id } = req.params;
