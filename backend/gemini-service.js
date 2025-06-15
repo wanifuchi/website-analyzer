@@ -51,30 +51,37 @@ class GeminiAIService {
       console.log('🔍 完全なGemini応答:', text);
 
       // JSONレスポンスの解析を試行（複数の方法で試す）
+      let cleanedText = text.trim();
+      
       try {
         // 方法1: 直接JSON解析
-        const directJson = JSON.parse(text);
+        const directJson = JSON.parse(cleanedText);
         console.log('✅ 直接JSON解析成功');
         return this.formatRecommendations(directJson, url, searchConsoleData, detailedContent);
       } catch (directError) {
         console.log('⚠️ 直接JSON解析失敗:', directError.message);
         
-        // 方法2: JSONブロックを抽出
+        // 方法2: 先頭・末尾の余分なテキストを除去してJSONを抽出
         try {
-          const jsonMatch = text.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            console.log('🔍 抽出されたJSON:', jsonMatch[0].substring(0, 300) + '...');
-            const recommendations = JSON.parse(jsonMatch[0]);
-            console.log('✅ JSONブロック解析成功');
+          // JSONの開始と終了を見つける
+          const startIndex = cleanedText.indexOf('{');
+          const lastIndex = cleanedText.lastIndexOf('}');
+          
+          if (startIndex !== -1 && lastIndex !== -1 && lastIndex > startIndex) {
+            const jsonString = cleanedText.substring(startIndex, lastIndex + 1);
+            console.log('🔍 抽出されたJSON:', jsonString.substring(0, 500) + '...');
+            
+            const recommendations = JSON.parse(jsonString);
+            console.log('✅ JSON抽出解析成功');
             return this.formatRecommendations(recommendations, url, searchConsoleData, detailedContent);
           }
         } catch (parseError) {
-          console.warn('⚠️ JSONブロック解析失敗:', parseError.message);
+          console.warn('⚠️ JSON抽出解析失敗:', parseError.message);
         }
 
         // 方法3: コードブロック内のJSONを探す
         try {
-          const codeBlockMatch = text.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+          const codeBlockMatch = cleanedText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
           if (codeBlockMatch) {
             console.log('🔍 コードブロック内JSON:', codeBlockMatch[1].substring(0, 300) + '...');
             const recommendations = JSON.parse(codeBlockMatch[1]);
@@ -83,6 +90,22 @@ class GeminiAIService {
           }
         } catch (codeBlockError) {
           console.warn('⚠️ コードブロック解析失敗:', codeBlockError.message);
+        }
+
+        // 方法4: 複数のJSONオブジェクトがある場合、最大のものを選択
+        try {
+          const jsonMatches = cleanedText.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g);
+          if (jsonMatches && jsonMatches.length > 0) {
+            // 最も長いJSONを選択
+            const longestJson = jsonMatches.reduce((a, b) => a.length > b.length ? a : b);
+            console.log('🔍 最長JSON選択:', longestJson.substring(0, 300) + '...');
+            
+            const recommendations = JSON.parse(longestJson);
+            console.log('✅ 最長JSON解析成功');
+            return this.formatRecommendations(recommendations, url, searchConsoleData, detailedContent);
+          }
+        } catch (longestError) {
+          console.warn('⚠️ 最長JSON解析失敗:', longestError.message);
         }
       }
 
@@ -179,7 +202,7 @@ ${this.formatDetailedContent(detailedContent)}
    - モバイルファーストインデックスへの完全対応
    - サイト構造とクロール効率の最適化
 
-以下の形式でJSONレスポンスを返してください：
+🎯 【重要】以下の形式で**必ず有効なJSON形式のみ**で応答してください（説明文は一切含めないでください）：
 
 {
   "summary": "AI分析による深層的洞察の要約（200文字以内）",
@@ -274,6 +297,13 @@ ${this.formatDetailedContent(detailedContent)}
 - 競合他社との差別化要素の特定
 
 💡 このサイトが業界トップレベルになるための革新的戦略を提案してください。
+
+⚠️ 【応答形式の厳密な指示】
+1. 応答は**純粋なJSON形式のみ**にしてください
+2. JSON以外の説明文、前置き、後書きは一切含めないでください
+3. 文字列内での改行は\\nを使用してください
+4. ダブルクォートのエスケープは\\"を使用してください
+5. 応答の最初の文字は必ず「{」で、最後の文字は必ず「}」にしてください
 `;
   }
 
@@ -481,21 +511,32 @@ ${this.formatDetailedContent(detailedContent)}
           category: this.extractCategory(line),
           priority: this.extractPriority(line),
           title: line.replace(/[^\w\s\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/g, '').trim(),
-          description: '',
+          deepAnalysis: '',
+          solution: '',
           implementation: '',
-          impact: '+10-25点',
+          expectedResults: '+10-25点',
+          kpiImpact: {
+            organicTraffic: '+20-40%',
+            conversionRate: '+2-5%',
+            rankingImprovement: '5-10位向上'
+          },
           timeframe: '2-4週間',
-          difficulty: 'medium'
+          difficulty: 'medium',
+          roi: '高'
         };
         
         // 次の行から詳細を抽出
-        for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+        for (let j = i + 1; j < Math.min(i + 8, lines.length); j++) {
           const nextLine = lines[j].trim();
-          if (nextLine.length > 20 && !this.isNewRecommendation(nextLine)) {
-            if (!currentRec.description) {
-              currentRec.description = nextLine;
+          if (nextLine.length > 10 && !this.isNewRecommendation(nextLine)) {
+            if (!currentRec.deepAnalysis && (nextLine.includes('分析') || nextLine.includes('問題') || nextLine.includes('課題'))) {
+              currentRec.deepAnalysis = nextLine;
+            } else if (!currentRec.solution && (nextLine.includes('解決') || nextLine.includes('対策') || nextLine.includes('改善'))) {
+              currentRec.solution = nextLine;
             } else if (!currentRec.implementation && nextLine.includes('実装')) {
               currentRec.implementation = nextLine;
+            } else if (!currentRec.deepAnalysis) {
+              currentRec.deepAnalysis = nextLine;
             }
           }
         }
