@@ -1423,7 +1423,7 @@ const AnalysisPage: React.FC = () => {
               )}
 
               {/* Search Console データ表示 */}
-              {aiRecommendations.searchConsoleData && (
+              {aiRecommendations.searchConsoleData && aiRecommendations.searchConsoleData.summary && (
                 <div className="bg-gradient-to-r from-green-100 to-blue-100 rounded-xl p-6 border border-green-300">
                   <h4 className="font-bold text-green-900 mb-4 flex items-center">
                     <span className="mr-2">📊</span>

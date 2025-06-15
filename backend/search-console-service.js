@@ -66,8 +66,8 @@ class SearchConsoleService {
    */
   async getSearchPerformance(siteUrl, options = {}) {
     if (!this.isAvailable) {
-      console.log('⚠️ Search Console API利用不可、モックデータを返します');
-      return this.getMockSearchPerformance(siteUrl);
+      console.log('⚠️ Search Console API利用不可、データなしを返します');
+      return null;
     }
 
     try {
@@ -126,7 +126,7 @@ class SearchConsoleService {
         console.error('サイトの所有者にサービスアカウントを「オーナー」として追加してもらってください');
       }
       
-      return this.getMockSearchPerformance(siteUrl);
+      return null;
     }
   }
 
