@@ -676,15 +676,7 @@ ${this.formatCompetitiveAnalysis(competitiveAnalysis)}
         ],
         marketPosition: '現在は中位に位置していますが、適切な施策により上位進出が可能です'
       },
-      userJourneyOptimization: {
-        currentPainPoints: [
-          'モバイルでの情報アクセシビリティ',
-          'サービス内容の理解しやすさ',
-          'お問い合わせまでの導線'
-        ],
-        optimizedFlow: '感情に配慮した情報提示から信頼構築、そして適切なタイミングでのアクション誘導',
-        conversionStrategy: 'ユーザーの心情に寄り添う段階的な情報提供とスムーズなコンタクト導線'
-      },
+      userJourneyOptimization: this.generateUserJourneyAnalysis(url, analysisResults, searchConsoleData, detailedContent),
       implementationRoadmap: {
         phase1: '基礎SEO最適化とモバイル対応（1-2週間）',
         phase2: 'UX改善とコンテンツ最適化（1-2ヶ月）',
@@ -911,6 +903,349 @@ ${this.formatCompetitiveAnalysis(competitiveAnalysis)}
       analysisDate: new Date().toISOString(),
       url,
       aiProvider: 'Fallback (Gemini API未設定)'
+    };
+  }
+
+  /**
+   * 実際のサイトデータに基づくユーザージャーニー最適化分析
+   * @param {string} url - 分析対象URL
+   * @param {Object} analysisResults - 分析結果
+   * @param {Object} searchConsoleData - Search Console データ
+   * @param {Object} detailedContent - 詳細ページコンテンツ
+   * @returns {Object} ユーザージャーニー最適化提案
+   */
+  generateUserJourneyAnalysis(url, analysisResults, searchConsoleData, detailedContent) {
+    console.log('🎯 実データ基づくユーザージャーニー分析開始');
+    
+    // 1. 現在の痛点を実際のデータから特定
+    const currentPainPoints = this.identifyPainPoints(analysisResults, detailedContent);
+    
+    // 2. ユーザーペルソナを推定
+    const userPersonas = this.estimateUserPersonas(detailedContent, searchConsoleData);
+    
+    // 3. コンバージョンファネルを分析
+    const conversionFunnel = this.analyzeConversionFunnel(analysisResults, detailedContent);
+    
+    // 4. 最適化されたフローを提案
+    const optimizedFlow = this.proposeOptimizedFlow(currentPainPoints, userPersonas, conversionFunnel);
+    
+    // 5. 具体的な改善戦略を生成
+    const conversionStrategy = this.generateConversionStrategy(analysisResults, detailedContent, searchConsoleData);
+    
+    return {
+      currentPainPoints,
+      userPersonas,
+      conversionFunnel,
+      optimizedFlow,
+      conversionStrategy,
+      implementationPriority: this.prioritizeUJImplementation(currentPainPoints),
+      expectedImpact: this.calculateUJExpectedImpact(analysisResults)
+    };
+  }
+
+  /**
+   * 実際のデータから痛点を特定
+   */
+  identifyPainPoints(analysisResults, detailedContent) {
+    const painPoints = [];
+    
+    // モバイル対応の問題
+    if (analysisResults.mobile?.score < 80) {
+      painPoints.push({
+        category: 'モバイル体験',
+        issue: 'モバイルデバイスでの利用性に重大な問題があります',
+        impact: 'high',
+        details: `モバイルスコア${analysisResults.mobile?.score || 0}点 - ユーザーの60-70%がモバイルでアクセスするため、離脱率増加の主要因`
+      });
+    }
+    
+    // ページ速度の問題
+    if (analysisResults.performance?.score < 75) {
+      painPoints.push({
+        category: 'ページ速度',
+        issue: 'ページ読み込み速度が遅く、ユーザーの待機ストレスが高い',
+        impact: 'high',
+        details: `パフォーマンススコア${analysisResults.performance?.score || 0}点 - 3秒以内に読み込まれないページの離脱率は53%増加`
+      });
+    }
+    
+    // ナビゲーション・構造の問題
+    if (detailedContent?.headings) {
+      const h1Count = detailedContent.headings.filter(h => h.level === 1).length;
+      if (h1Count !== 1) {
+        painPoints.push({
+          category: '情報構造',
+          issue: 'ページの情報階層が不明確で、ユーザーが迷いやすい',
+          impact: 'medium',
+          details: `H1タグが${h1Count}個 - 情報の優先順位が不明確で、認知的負荷が高い`
+        });
+      }
+    }
+    
+    // コンテンツの問題
+    if (detailedContent?.textContent && detailedContent.textContent.length < 1000) {
+      painPoints.push({
+        category: 'コンテンツ不足',
+        issue: '情報量が不足しており、ユーザーの疑問に十分答えられない',
+        impact: 'medium',
+        details: `コンテンツ量${detailedContent.textContent.length}文字 - ユーザーの意思決定に必要な情報が不足`
+      });
+    }
+    
+    // SEOの問題（間接的にUXに影響）
+    if (analysisResults.seo?.score < 80) {
+      painPoints.push({
+        category: '発見性',
+        issue: '検索エンジンでの発見性が低く、ターゲットユーザーに届いていない',
+        impact: 'high',
+        details: `SEOスコア${analysisResults.seo?.score || 0}点 - 検索結果上位表示されず、適切なユーザーの流入が少ない`
+      });
+    }
+    
+    return painPoints;
+  }
+
+  /**
+   * ユーザーペルソナを推定
+   */
+  estimateUserPersonas(detailedContent, searchConsoleData) {
+    const personas = [];
+    
+    // ビジネス分野から推定
+    const businessContext = detailedContent?.businessContext;
+    if (businessContext?.primaryIndustry) {
+      const industry = businessContext.primaryIndustry;
+      
+      if (industry.includes('医療') || industry.includes('健康')) {
+        personas.push({
+          type: '健康関心層',
+          characteristics: ['情報の信頼性を重視', '専門的な説明を求める', '時間をかけて検討'],
+          motivations: ['健康問題の解決', '安心・安全な選択', '専門家の意見'],
+          behaviors: ['複数サイトで情報収集', '口コミ・評判を重視', '家族と相談']
+        });
+      } else if (industry.includes('教育') || industry.includes('学習')) {
+        personas.push({
+          type: '学習意欲層',
+          characteristics: ['具体的な成果を重視', 'コストパフォーマンス重視', '比較検討慎重'],
+          motivations: ['スキル向上', '資格取得', 'キャリア発展'],
+          behaviors: ['詳細な比較検討', '無料体験・サンプル重視', 'レビュー詳細確認']
+        });
+      } else if (industry.includes('不動産') || industry.includes('住宅')) {
+        personas.push({
+          type: '不動産検討層',
+          characteristics: ['大きな決断のため慎重', '家族の意見重視', '長期的視点'],
+          motivations: ['理想の住環境', '資産価値', '家族の幸せ'],
+          behaviors: ['現地確認重視', '多数の物件比較', '専門家相談']
+        });
+      }
+    }
+    
+    // Search Consoleデータから推定
+    if (searchConsoleData?.queries) {
+      const keywords = searchConsoleData.queries.map(q => q.query);
+      
+      // 地域関連キーワードがある場合
+      const hasLocalKeywords = keywords.some(k => k.match(/[都道府県市区町村]/));
+      if (hasLocalKeywords) {
+        personas.push({
+          type: '地域密着ニーズ層',
+          characteristics: ['地域性重視', '近場での解決希望', '地域コミュニティ重視'],
+          motivations: ['近場での利便性', '地域とのつながり', '通いやすさ'],
+          behaviors: ['地図・アクセス重視', '営業時間確認', '電話での問い合わせ']
+        });
+      }
+      
+      // 価格関連キーワードがある場合
+      const hasPriceKeywords = keywords.some(k => k.match(/料金|価格|費用|安い|格安/));
+      if (hasPriceKeywords) {
+        personas.push({
+          type: '価格重視層',
+          characteristics: ['コストパフォーマンス重視', '料金透明性重視', '比較検討慎重'],
+          motivations: ['最適な価格での購入', '無駄な出費回避', '価値ある投資'],
+          behaviors: ['料金比較サイト利用', '割引・キャンペーン情報収集', '見積もり複数取得']
+        });
+      }
+    }
+    
+    // デフォルトペルソナ
+    if (personas.length === 0) {
+      personas.push({
+        type: '一般検討層',
+        characteristics: ['情報収集してから判断', '信頼性重視', '利便性重視'],
+        motivations: ['問題解決', '信頼できる選択', '効率的な解決'],
+        behaviors: ['ネット検索での情報収集', '複数選択肢の比較', 'レビュー・評判確認']
+      });
+    }
+    
+    return personas;
+  }
+
+  /**
+   * コンバージョンファネルを分析
+   */
+  analyzeConversionFunnel(analysisResults, detailedContent) {
+    const funnel = {
+      awareness: { stage: '認知', issues: [], improvements: [] },
+      interest: { stage: '関心', issues: [], improvements: [] },
+      consideration: { stage: '検討', issues: [], improvements: [] },
+      decision: { stage: '決定', issues: [], improvements: [] },
+      action: { stage: '行動', issues: [], improvements: [] }
+    };
+    
+    // 認知段階の分析
+    if (analysisResults.seo?.score < 80) {
+      funnel.awareness.issues.push('検索エンジンでの可視性が低い');
+      funnel.awareness.improvements.push('SEO強化により検索結果上位表示を実現');
+    }
+    
+    // 関心段階の分析
+    if (detailedContent?.title && detailedContent.title.length > 60) {
+      funnel.interest.issues.push('タイトルが長すぎて魅力的でない');
+      funnel.interest.improvements.push('魅力的で簡潔なタイトルに改善');
+    }
+    
+    // 検討段階の分析
+    if (!detailedContent?.metaDescription || detailedContent.metaDescription.length < 100) {
+      funnel.consideration.issues.push('メタ説明が不十分でクリック誘導が弱い');
+      funnel.consideration.improvements.push('魅力的なメタ説明でクリック率向上');
+    }
+    
+    // 決定段階の分析
+    if (detailedContent?.textContent && !detailedContent.textContent.includes('お問い合わせ') && !detailedContent.textContent.includes('連絡')) {
+      funnel.decision.issues.push('明確なアクションポイントが不足');
+      funnel.decision.improvements.push('明確なCTAボタン・連絡先の設置');
+    }
+    
+    // 行動段階の分析
+    if (analysisResults.mobile?.score < 80) {
+      funnel.action.issues.push('モバイルでのアクションが困難');
+      funnel.action.improvements.push('モバイル最適化でアクション完了率向上');
+    }
+    
+    return funnel;
+  }
+
+  /**
+   * 最適化されたフローを提案
+   */
+  proposeOptimizedFlow(painPoints, personas, conversionFunnel) {
+    const highImpactPains = painPoints.filter(p => p.impact === 'high');
+    const primaryPersona = personas[0] || { type: '一般ユーザー', characteristics: ['情報収集重視'] };
+    
+    let optimizedFlow = `【${primaryPersona.type}に最適化されたユーザーフロー】\n\n`;
+    
+    // Step 1: 第一印象の最適化
+    optimizedFlow += `1. 第一印象最適化（3秒以内）\n`;
+    if (highImpactPains.some(p => p.category === 'ページ速度')) {
+      optimizedFlow += `   - 高速読み込みで即座に信頼感を構築\n`;
+    }
+    optimizedFlow += `   - ${primaryPersona.characteristics[0] || '分かりやすさ'}を重視した明確な価値提案表示\n`;
+    optimizedFlow += `   - 視覚的階層で重要情報を即座に認識可能\n\n`;
+    
+    // Step 2: 信頼構築
+    optimizedFlow += `2. 信頼構築フェーズ（10-30秒）\n`;
+    optimizedFlow += `   - ${primaryPersona.motivations?.[0] || '問題解決'}に直結する具体的ベネフィット提示\n`;
+    optimizedFlow += `   - 社会的証明（実績・事例・レビュー）の戦略的配置\n`;
+    optimizedFlow += `   - 専門性と権威性を示す情報の適切な提示\n\n`;
+    
+    // Step 3: 検討支援
+    optimizedFlow += `3. 検討支援フェーズ（1-3分）\n`;
+    optimizedFlow += `   - ${primaryPersona.behaviors?.[0] || '情報収集'}行動に対応した情報構造\n`;
+    optimizedFlow += `   - 疑問・不安を先回りして解決するFAQ配置\n`;
+    optimizedFlow += `   - 比較検討を支援する明確な差別化要素提示\n\n`;
+    
+    // Step 4: アクション誘導
+    optimizedFlow += `4. アクション誘導フェーズ\n`;
+    if (highImpactPains.some(p => p.category === 'モバイル体験')) {
+      optimizedFlow += `   - モバイル最適化された簡単アクション設計\n`;
+    }
+    optimizedFlow += `   - 心理的ハードルを下げる段階的アプローチ\n`;
+    optimizedFlow += `   - 緊急性と希少性を活用した自然な行動促進\n`;
+    
+    return optimizedFlow;
+  }
+
+  /**
+   * コンバージョン戦略を生成
+   */
+  generateConversionStrategy(analysisResults, detailedContent, searchConsoleData) {
+    let strategy = '';
+    
+    // データ基づく戦略策定
+    const hasLocalKeywords = searchConsoleData?.queries?.some(q => q.query.match(/[都道府県市区町村]/));
+    const hasCommercialIntent = searchConsoleData?.queries?.some(q => q.query.match(/料金|価格|申し込み|予約/));
+    
+    strategy += `【実データに基づく戦略的コンバージョン最適化】\n\n`;
+    
+    // 1. ターゲティング戦略
+    strategy += `1. ターゲティング最適化\n`;
+    if (hasLocalKeywords) {
+      strategy += `   - 地域密着型アプローチ: 地域特有のニーズに対応した情報提供\n`;
+    }
+    if (hasCommercialIntent) {
+      strategy += `   - 購買意欲の高いユーザー向け: 価格・サービス詳細の前面配置\n`;
+    }
+    strategy += `   - 検索意図に応じたランディング体験の個別最適化\n\n`;
+    
+    // 2. 心理的アプローチ
+    strategy += `2. 心理的最適化\n`;
+    strategy += `   - 認知的負荷軽減: 情報の段階的提示で決断疲れを防止\n`;
+    strategy += `   - 社会的証明活用: 同様のニーズを持つユーザーの成功事例提示\n`;
+    strategy += `   - 損失回避心理: 「今やらないことのリスク」を適切に伝達\n\n`;
+    
+    // 3. 技術的最適化
+    strategy += `3. 技術的コンバージョン最適化\n`;
+    if (analysisResults.performance?.score < 80) {
+      strategy += `   - ページ速度向上でフォーム離脱率30%削減\n`;
+    }
+    if (analysisResults.mobile?.score < 80) {
+      strategy += `   - モバイル最適化でスマホユーザーのCV率50%向上\n`;
+    }
+    strategy += `   - マイクロインタラクションでユーザーエンゲージメント向上\n`;
+    strategy += `   - A/Bテストによる継続的な最適化サイクル確立\n\n`;
+    
+    // 4. 測定・改善
+    strategy += `4. 継続的改善フレームワーク\n`;
+    strategy += `   - ヒートマップ分析による行動パターン可視化\n`;
+    strategy += `   - ファネル分析で離脱ポイント特定・改善\n`;
+    strategy += `   - 月次でのコンバージョン要因分析・施策調整`;
+    
+    return strategy;
+  }
+
+  /**
+   * 実装優先度を設定
+   */
+  prioritizeUJImplementation(painPoints) {
+    return painPoints
+      .sort((a, b) => {
+        const impactOrder = { high: 3, medium: 2, low: 1 };
+        return impactOrder[b.impact] - impactOrder[a.impact];
+      })
+      .slice(0, 3)
+      .map((point, index) => ({
+        priority: index + 1,
+        category: point.category,
+        timeline: index === 0 ? '即座対応' : index === 1 ? '1週間以内' : '1ヶ月以内',
+        expectedImpact: point.impact === 'high' ? '+15-25%' : '+5-15%'
+      }));
+  }
+
+  /**
+   * UJ改善の期待効果を算出
+   */
+  calculateUJExpectedImpact(analysisResults) {
+    const currentScores = {
+      mobile: analysisResults.mobile?.score || 0,
+      performance: analysisResults.performance?.score || 0,
+      seo: analysisResults.seo?.score || 0
+    };
+    
+    return {
+      bounceRateReduction: Math.max(10, Math.min(40, (100 - currentScores.performance) * 0.3)) + '%',
+      conversionRateIncrease: Math.max(15, Math.min(50, (100 - currentScores.mobile) * 0.4)) + '%',
+      userSatisfactionIncrease: Math.max(20, Math.min(60, (300 - Object.values(currentScores).reduce((a,b) => a+b)) * 0.15)) + '%',
+      timeToConversion: 'コンバージョンまでの時間を25-40%短縮'
     };
   }
 

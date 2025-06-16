@@ -1727,9 +1727,61 @@ const AnalysisPage: React.FC = () => {
                   <h4 className="font-bold text-blue-900 mb-4 flex items-center">
                     <span className="mr-2">👥</span>
                     ユーザージャーニー最適化
+                    <button
+                      onClick={() => {
+                        setSelectedRecommendation({
+                          title: 'ユーザージャーニー最適化',
+                          category: 'UX改善',
+                          ...aiRecommendations.userJourneyOptimization
+                        });
+                        setShowChatbot(true);
+                      }}
+                      className="ml-auto bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm transition-colors"
+                    >
+                      💬 詳しく聞く
+                    </button>
                   </h4>
-                  <div className="space-y-4">
-                    {aiRecommendations.userJourneyOptimization.currentPainPoints && (
+                  <div className="space-y-6">
+                    
+                    {/* 痛点分析（新しい詳細構造） */}
+                    {aiRecommendations.userJourneyOptimization.currentPainPoints && Array.isArray(aiRecommendations.userJourneyOptimization.currentPainPoints) && (
+                      <div>
+                        <h5 className="font-semibold text-blue-800 mb-3">🎯 実データに基づく痛点分析</h5>
+                        <div className="space-y-3">
+                          {aiRecommendations.userJourneyOptimization.currentPainPoints.map((point: any, index: number) => (
+                            <div key={index} className={`p-4 rounded-lg border ${
+                              point.impact === 'high' ? 'bg-red-50 border-red-200' :
+                              point.impact === 'medium' ? 'bg-yellow-50 border-yellow-200' :
+                              'bg-green-50 border-green-200'
+                            }`}>
+                              <div className="flex items-start">
+                                <span className={`mr-3 text-lg ${
+                                  point.impact === 'high' ? 'text-red-500' :
+                                  point.impact === 'medium' ? 'text-yellow-500' :
+                                  'text-green-500'
+                                }`}>
+                                  {point.impact === 'high' ? '🚨' : point.impact === 'medium' ? '⚠️' : '💡'}
+                                </span>
+                                <div className="flex-1">
+                                  <div className="font-medium text-gray-800 mb-1">{point.category}</div>
+                                  <div className="text-gray-700 mb-2">{point.issue}</div>
+                                  {point.details && (
+                                    <div className="text-sm text-gray-600 bg-white p-2 rounded border">
+                                      {point.details}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 旧形式対応（文字列配列の場合） */}
+                    {aiRecommendations.userJourneyOptimization.currentPainPoints && 
+                     Array.isArray(aiRecommendations.userJourneyOptimization.currentPainPoints) &&
+                     typeof aiRecommendations.userJourneyOptimization.currentPainPoints[0] === 'string' && (
                       <div>
                         <h5 className="font-semibold text-blue-800 mb-2">痛点分析</h5>
                         <ul className="space-y-2">
@@ -1742,16 +1794,124 @@ const AnalysisPage: React.FC = () => {
                         </ul>
                       </div>
                     )}
-                    {aiRecommendations.userJourneyOptimization.optimizedFlow && (
+
+                    {/* ユーザーペルソナ */}
+                    {aiRecommendations.userJourneyOptimization.userPersonas && (
                       <div>
-                        <h5 className="font-semibold text-blue-800 mb-2">最適化フロー</h5>
-                        <p className="text-gray-700">{aiRecommendations.userJourneyOptimization.optimizedFlow}</p>
+                        <h5 className="font-semibold text-blue-800 mb-3">👤 推定ユーザーペルソナ</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {aiRecommendations.userJourneyOptimization.userPersonas.map((persona: any, index: number) => (
+                            <div key={index} className="bg-white p-4 rounded-lg border border-blue-200">
+                              <h6 className="font-medium text-blue-900 mb-2">{persona.type}</h6>
+                              <div className="space-y-2 text-sm">
+                                <div>
+                                  <span className="font-medium text-gray-700">特徴:</span>
+                                  <span className="text-gray-600 ml-1">{persona.characteristics?.join(', ')}</span>
+                                </div>
+                                <div>
+                                  <span className="font-medium text-gray-700">動機:</span>
+                                  <span className="text-gray-600 ml-1">{persona.motivations?.join(', ')}</span>
+                                </div>
+                                <div>
+                                  <span className="font-medium text-gray-700">行動:</span>
+                                  <span className="text-gray-600 ml-1">{persona.behaviors?.join(', ')}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
+
+                    {/* コンバージョンファネル */}
+                    {aiRecommendations.userJourneyOptimization.conversionFunnel && (
+                      <div>
+                        <h5 className="font-semibold text-blue-800 mb-3">🔄 コンバージョンファネル分析</h5>
+                        <div className="space-y-3">
+                          {Object.entries(aiRecommendations.userJourneyOptimization.conversionFunnel).map(([stage, data]: [string, any], index: number) => (
+                            <div key={stage} className="bg-white p-4 rounded-lg border border-blue-200">
+                              <h6 className="font-medium text-blue-900 mb-2">{data.stage}</h6>
+                              {data.issues && data.issues.length > 0 && (
+                                <div className="mb-2">
+                                  <span className="text-sm font-medium text-red-600">課題:</span>
+                                  <ul className="text-sm text-gray-600 ml-4">
+                                    {data.issues.map((issue: string, i: number) => (
+                                      <li key={i} className="list-disc">{issue}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {data.improvements && data.improvements.length > 0 && (
+                                <div>
+                                  <span className="text-sm font-medium text-green-600">改善策:</span>
+                                  <ul className="text-sm text-gray-600 ml-4">
+                                    {data.improvements.map((improvement: string, i: number) => (
+                                      <li key={i} className="list-disc">{improvement}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 最適化フロー */}
+                    {aiRecommendations.userJourneyOptimization.optimizedFlow && (
+                      <div>
+                        <h5 className="font-semibold text-blue-800 mb-2">🎯 最適化フロー</h5>
+                        <div className="bg-white p-4 rounded-lg border border-blue-200">
+                          <pre className="text-gray-700 whitespace-pre-wrap text-sm font-mono">{aiRecommendations.userJourneyOptimization.optimizedFlow}</pre>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* コンバージョン戦略 */}
                     {aiRecommendations.userJourneyOptimization.conversionStrategy && (
                       <div>
-                        <h5 className="font-semibold text-blue-800 mb-2">コンバージョン戦略</h5>
-                        <p className="text-gray-700">{aiRecommendations.userJourneyOptimization.conversionStrategy}</p>
+                        <h5 className="font-semibold text-blue-800 mb-2">🚀 コンバージョン戦略</h5>
+                        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-lg border border-blue-200">
+                          <pre className="text-gray-700 whitespace-pre-wrap text-sm">{aiRecommendations.userJourneyOptimization.conversionStrategy}</pre>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 実装優先度 */}
+                    {aiRecommendations.userJourneyOptimization.implementationPriority && (
+                      <div>
+                        <h5 className="font-semibold text-blue-800 mb-3">📋 実装優先度</h5>
+                        <div className="space-y-2">
+                          {aiRecommendations.userJourneyOptimization.implementationPriority.map((item: any, index: number) => (
+                            <div key={index} className="bg-white p-3 rounded-lg border border-blue-200 flex items-center justify-between">
+                              <div>
+                                <span className="font-medium text-blue-900">優先度 {item.priority}: {item.category}</span>
+                                <div className="text-sm text-gray-600">{item.timeline}</div>
+                              </div>
+                              <div className="text-sm font-medium text-green-600">{item.expectedImpact}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 期待効果 */}
+                    {aiRecommendations.userJourneyOptimization.expectedImpact && (
+                      <div>
+                        <h5 className="font-semibold text-blue-800 mb-3">📈 期待効果</h5>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {Object.entries(aiRecommendations.userJourneyOptimization.expectedImpact).map(([key, value]: [string, any]) => (
+                            <div key={key} className="bg-white p-3 rounded-lg border border-blue-200 text-center">
+                              <div className="text-sm text-gray-600 mb-1">
+                                {key === 'bounceRateReduction' ? '直帰率削減' :
+                                 key === 'conversionRateIncrease' ? 'CV率向上' :
+                                 key === 'userSatisfactionIncrease' ? '満足度向上' :
+                                 key === 'timeToConversion' ? 'CV時間短縮' : key}
+                              </div>
+                              <div className="font-bold text-blue-600">{value}</div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
