@@ -16,6 +16,9 @@ const SearchConsoleService = require('./search-console-service');
 // 競合分析サービス
 const CompetitiveAnalysisService = require('./competitive-analysis-service');
 
+// SERP分析サービス
+const SerpAnalysisService = require('./serp-analysis-service');
+
 const app = express();
 const PORT = process.env.PORT || 3002;
 // Railway強制再デプロイ: 2025-01-13T20:31:00Z
@@ -34,6 +37,9 @@ const searchConsoleService = new SearchConsoleService();
 
 // 競合分析サービス初期化
 const competitiveAnalysisService = new CompetitiveAnalysisService();
+
+// SERP分析サービス初期化
+const serpAnalysisService = new SerpAnalysisService();
 
 // 詳細ページコンテンツ抽出関数
 async function extractDetailedPageContent(url) {
@@ -313,7 +319,7 @@ async function generateAIRecommendations(url, analysisResults) {
     // 詳細コンテンツ抽出、Search Consoleデータ取得、競合分析を並列実行
     console.log('🚀 並列データ取得開始:', url);
     
-    const [detailedContentResult, searchConsoleResult, competitiveAnalysisResult] = await Promise.allSettled([
+    const [detailedContentResult, searchConsoleResult, competitiveAnalysisResult, serpAnalysisResult] = await Promise.allSettled([
       // 詳細コンテンツ抽出（タイムアウト対策付き）
       extractDetailedPageContent(url).catch(error => {
         console.warn('⚠️ 詳細コンテンツ抽出エラー:', error.message);
@@ -345,6 +351,24 @@ async function generateAIRecommendations(url, analysisResults) {
           console.warn('⚠️ 競合分析エラー:', error.message);
           return null;
         }
+      })(),
+      
+      // SERP分析実行
+      (async () => {
+        try {
+          // 競合分析からキーワードを取得
+          const tempContent = await extractDetailedPageContent(url).catch(() => ({
+            title: '', textContent: '', properNouns: []
+          }));
+          const keywords = [];
+          if (tempContent.title) {
+            keywords.push(tempContent.title.replace(/[｜|\-\s].*/g, '').trim());
+          }
+          return await serpAnalysisService.analyzeSerpFeatures(url, keywords);
+        } catch (error) {
+          console.warn('⚠️ SERP分析エラー:', error.message);
+          return null;
+        }
       })()
     ]);
     
@@ -352,15 +376,18 @@ async function generateAIRecommendations(url, analysisResults) {
     const detailedContent = detailedContentResult.status === 'fulfilled' ? detailedContentResult.value : null;
     const searchConsoleData = searchConsoleResult.status === 'fulfilled' ? searchConsoleResult.value : null;
     const competitiveAnalysis = competitiveAnalysisResult.status === 'fulfilled' ? competitiveAnalysisResult.value : null;
+    const serpAnalysis = serpAnalysisResult.status === 'fulfilled' ? serpAnalysisResult.value : null;
     
     console.log('✅ 並列データ取得完了:', {
       hasDetailedContent: !!detailedContent && !detailedContent.error,
       hasSearchConsoleData: !!searchConsoleData,
       hasCompetitiveAnalysis: !!competitiveAnalysis,
+      hasSerpAnalysis: !!serpAnalysis,
       contentError: detailedContent?.error,
       titleLength: detailedContent?.title?.length || 0,
       contentLength: detailedContent?.textContent?.length || 0,
-      competitorsFound: competitiveAnalysis?.topCompetitors?.length || 0
+      competitorsFound: competitiveAnalysis?.topCompetitors?.length || 0,
+      serpKeywords: serpAnalysis?.keywords?.length || 0
     });
 
     // Gemini AI サービスを使用して推奨事項を生成（すべてのデータを含む）
@@ -380,6 +407,15 @@ async function generateAIRecommendations(url, analysisResults) {
         differentiationOpportunities: competitiveAnalysis.differentiationOpportunities || [],
         marketPosition: competitiveAnalysis.marketPosition?.description || '分析中',
         dataSource: competitiveAnalysis.dataSource
+      };
+    }
+    
+    // SERP分析データをレスポンスに追加
+    if (serpAnalysis) {
+      recommendations.serpAnalysis = {
+        summary: serpAnalysis.summary,
+        recommendations: serpAnalysis.recommendations,
+        dataSource: serpAnalysis.dataSource
       };
     }
     

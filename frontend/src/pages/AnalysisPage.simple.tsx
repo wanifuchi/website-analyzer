@@ -1758,6 +1758,182 @@ const AnalysisPage: React.FC = () => {
                 </div>
               )}
 
+              {/* 技術イノベーション提案 */}
+              {aiRecommendations.technicalInnovation && (
+                <div className="bg-gradient-to-r from-indigo-100 to-purple-100 rounded-xl p-6 border border-indigo-300">
+                  <h4 className="font-bold text-indigo-900 mb-4 flex items-center">
+                    <span className="mr-2">🚀</span>
+                    技術イノベーション提案
+                  </h4>
+                  <div className="space-y-4">
+                    {aiRecommendations.technicalInnovation.modernTechStack && (
+                      <div>
+                        <h5 className="font-semibold text-indigo-800 mb-3">🛠️ 推奨技術スタック</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {aiRecommendations.technicalInnovation.modernTechStack.map((tech: string, index: number) => (
+                            <div key={index} className="bg-white p-3 rounded-lg border border-indigo-200 flex items-center">
+                              <span className="text-indigo-600 font-mono text-sm">{tech}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {aiRecommendations.technicalInnovation.performanceBoosts && (
+                      <div>
+                        <h5 className="font-semibold text-indigo-800 mb-2">⚡ パフォーマンス向上技術</h5>
+                        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg border border-indigo-200">
+                          <p className="text-gray-700">{aiRecommendations.technicalInnovation.performanceBoosts}</p>
+                        </div>
+                      </div>
+                    )}
+                    {aiRecommendations.technicalInnovation.futureProofing && (
+                      <div>
+                        <h5 className="font-semibold text-indigo-800 mb-2">🔮 将来性担保策</h5>
+                        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-4 rounded-lg border border-purple-200">
+                          <p className="text-gray-700">{aiRecommendations.technicalInnovation.futureProofing}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* SEO戦略2025 */}
+              {aiRecommendations.seoStrategy2025 && (
+                <div className="bg-gradient-to-r from-teal-100 to-cyan-100 rounded-xl p-6 border border-teal-300">
+                  <h4 className="font-bold text-teal-900 mb-4 flex items-center">
+                    <span className="mr-2">🎯</span>
+                    SEO戦略2025
+                  </h4>
+                  <div className="space-y-4">
+                    {aiRecommendations.seoStrategy2025.eeaStrategy && (
+                      <div>
+                        <h5 className="font-semibold text-teal-800 mb-2">🏆 E-E-A-T強化戦略</h5>
+                        <div className="bg-white p-4 rounded-lg border border-teal-200">
+                          <p className="text-gray-700">{aiRecommendations.seoStrategy2025.eeaStrategy}</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <span className="bg-teal-100 text-teal-700 px-2 py-1 rounded text-xs">経験</span>
+                            <span className="bg-cyan-100 text-cyan-700 px-2 py-1 rounded text-xs">専門性</span>
+                            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">権威性</span>
+                            <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs">信頼性</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {aiRecommendations.seoStrategy2025.contentOptimization && (
+                      <div>
+                        <h5 className="font-semibold text-teal-800 mb-2">📝 コンテンツ最適化方針</h5>
+                        <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-4 rounded-lg border border-teal-200">
+                          <p className="text-gray-700">{aiRecommendations.seoStrategy2025.contentOptimization}</p>
+                        </div>
+                      </div>
+                    )}
+                    {aiRecommendations.seoStrategy2025.technicalSeo && (
+                      <div>
+                        <h5 className="font-semibold text-teal-800 mb-2">⚙️ テクニカルSEO改善</h5>
+                        <div className="bg-gradient-to-r from-cyan-50 to-teal-50 p-4 rounded-lg border border-cyan-200">
+                          <p className="text-gray-700">{aiRecommendations.seoStrategy2025.technicalSeo}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* SERP分析 */}
+              {aiRecommendations.serpAnalysis && (
+                <div className="bg-gradient-to-r from-rose-100 to-pink-100 rounded-xl p-6 border border-rose-300">
+                  <h4 className="font-bold text-rose-900 mb-4 flex items-center">
+                    <span className="mr-2">🔍</span>
+                    SERP（検索結果）分析
+                  </h4>
+                  
+                  {/* サマリー情報 */}
+                  {aiRecommendations.serpAnalysis.summary && (
+                    <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-white p-4 rounded-lg border border-rose-200">
+                        <div className="text-sm text-gray-600">平均順位</div>
+                        <div className="text-2xl font-bold text-rose-600">
+                          {aiRecommendations.serpAnalysis.summary.averagePosition ? 
+                            `${aiRecommendations.serpAnalysis.summary.averagePosition.toFixed(1)}位` : 
+                            '分析中'}
+                        </div>
+                      </div>
+                      <div className="bg-white p-4 rounded-lg border border-rose-200">
+                        <div className="text-sm text-gray-600">分析キーワード数</div>
+                        <div className="text-2xl font-bold text-rose-600">
+                          {aiRecommendations.serpAnalysis.summary.analyzedKeywords || 0}
+                        </div>
+                      </div>
+                      <div className="bg-white p-4 rounded-lg border border-rose-200">
+                        <div className="text-sm text-gray-600">データソース</div>
+                        <div className="text-sm font-medium text-rose-600">
+                          {aiRecommendations.serpAnalysis.dataSource}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* SERP特徴 */}
+                  {aiRecommendations.serpAnalysis.summary?.serpFeatures && Object.keys(aiRecommendations.serpAnalysis.summary.serpFeatures).length > 0 && (
+                    <div className="mb-6">
+                      <h5 className="font-semibold text-rose-800 mb-3">🎯 検出されたSERP特徴</h5>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(aiRecommendations.serpAnalysis.summary.serpFeatures).map(([feature, count]) => (
+                          <span key={feature} className="bg-rose-100 text-rose-700 px-3 py-1 rounded-full text-sm border border-rose-300">
+                            {feature.replace(/^has/, '').replace(/([A-Z])/g, ' $1').trim()} ({count})
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* 改善機会 */}
+                  {aiRecommendations.serpAnalysis.summary?.topOpportunities && aiRecommendations.serpAnalysis.summary.topOpportunities.length > 0 && (
+                    <div className="mb-6">
+                      <h5 className="font-semibold text-rose-800 mb-3">💡 改善機会</h5>
+                      <div className="space-y-3">
+                        {aiRecommendations.serpAnalysis.summary.topOpportunities.map((opp: any, index: number) => (
+                          <div key={index} className={`p-3 rounded-lg border ${
+                            opp.priority === 'high' ? 'bg-red-50 border-red-200' :
+                            opp.priority === 'medium' ? 'bg-yellow-50 border-yellow-200' :
+                            'bg-green-50 border-green-200'
+                          }`}>
+                            <div className="font-medium text-gray-800 mb-1">{opp.description}</div>
+                            <div className="text-sm text-gray-600">{opp.action}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* SERP改善提案 */}
+                  {aiRecommendations.serpAnalysis.recommendations && aiRecommendations.serpAnalysis.recommendations.length > 0 && (
+                    <div>
+                      <h5 className="font-semibold text-rose-800 mb-3">📋 SERP改善提案</h5>
+                      <div className="space-y-4">
+                        {aiRecommendations.serpAnalysis.recommendations.map((rec: any, index: number) => (
+                          <div key={index} className="bg-white p-4 rounded-lg border border-rose-200">
+                            <h6 className="font-medium text-rose-900 mb-2">{rec.title}</h6>
+                            <p className="text-sm text-gray-700 mb-3">{rec.description}</p>
+                            {rec.implementation && rec.implementation.length > 0 && (
+                              <ul className="text-sm text-gray-600 space-y-1">
+                                {rec.implementation.map((step: string, stepIndex: number) => (
+                                  <li key={stepIndex} className="flex items-start">
+                                    <span className="mr-2 text-rose-500">•</span>
+                                    {step}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* 実装ロードマップ */}
               {aiRecommendations.implementationRoadmap && (
                 <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-6 border border-green-300">
