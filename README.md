@@ -97,6 +97,69 @@ cd backend && npm install
 cd frontend && npm install
 ```
 
+### 🔑 API設定（高度な機能利用時）
+
+より高度な分析機能を利用するには、以下のAPIキーの設定が必要です：
+
+#### 1. **Google PageSpeed Insights API**（必須）
+- **用途**: Core Web Vitals、パフォーマンス分析
+- **取得方法**:
+  1. [Google Cloud Console](https://console.cloud.google.com)でプロジェクト作成
+  2. PageSpeed Insights API を有効化
+  3. APIキーを作成
+- **設定**: `GOOGLE_PAGESPEED_API_KEY`
+
+#### 2. **Google Gemini AI API**（必須）
+- **用途**: AI深層分析、改善提案生成
+- **取得方法**:
+  1. [Google AI Studio](https://makersuite.google.com/app/apikey)でAPIキー取得
+  2. Gemini 2.0 Flash Experimental モデルを選択
+- **設定**: `GEMINI_API_KEY`
+
+#### 3. **Google Search Console API**（推奨）
+- **用途**: 実際の検索パフォーマンスデータ取得
+- **取得方法**:
+  1. Google Cloud Console で Search Console API を有効化
+  2. OAuth 2.0 クライアント ID を作成
+  3. リダイレクトURIを設定
+- **設定**: 
+  - `GOOGLE_CLIENT_ID`
+  - `GOOGLE_CLIENT_SECRET`
+  - `GOOGLE_REDIRECT_URI`
+
+#### 4. **Google Custom Search API**（推奨）
+- **用途**: 競合分析、SERP分析、実際の検索結果データ取得
+- **取得方法**:
+  1. Google Cloud Console で Custom Search API を有効化
+  2. APIキーを作成
+  3. [Programmable Search Engine](https://programmablesearchengine.google.com/)で検索エンジン作成
+  4. 検索エンジンIDを取得
+- **設定**:
+  - `GOOGLE_API_KEY`
+  - `GOOGLE_SEARCH_ENGINE_ID`
+
+### 環境変数の設定
+```bash
+# backend/.env ファイルを作成
+cp backend/.env.example backend/.env
+
+# 各APIキーを設定
+vim backend/.env
+```
+
+### 🎯 API未設定時の動作
+APIキーが設定されていない場合でも、以下の機能は利用可能です：
+- 基本的なサイト分析（HTML構造、メタタグ等）
+- レスポンシブデザインチェック
+- 基本的なSEO分析
+- モックデータによるデモ表示
+
+ただし、以下の機能は制限されます：
+- **PageSpeed API未設定**: Core Web Vitalsの実測値が取得できません
+- **Gemini API未設定**: AI深層分析・改善提案が簡易版になります
+- **Search Console API未設定**: 実際の検索パフォーマンスデータが表示されません
+- **Custom Search API未設定**: 競合分析・SERP分析が推定データになります
+
 ## 📊 使用方法
 
 1. `./quick-start.sh` でツールを起動
