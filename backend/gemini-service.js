@@ -31,9 +31,10 @@ class GeminiAIService {
    * @param {Object} analysisResults - 分析結果オブジェクト
    * @param {Object} searchConsoleData - Search Console データ（オプション）
    * @param {Object} detailedContent - 詳細ページコンテンツ（オプション）
+   * @param {Object} competitiveAnalysis - 競合分析データ（オプション）
    * @returns {Promise<Object>} AI改善提案
    */
-  async generateWebsiteRecommendations(url, analysisResults, searchConsoleData = null, detailedContent = null) {
+  async generateWebsiteRecommendations(url, analysisResults, searchConsoleData = null, detailedContent = null, competitiveAnalysis = null) {
     if (!this.isAvailable) {
       console.log('⚠️ Gemini API利用不可、フォールバック推奨事項を返します');
       return this.getFallbackRecommendations(url, analysisResults);
@@ -42,7 +43,7 @@ class GeminiAIService {
     try {
       console.log('🤖 Gemini AI分析開始:', url);
 
-      const prompt = this.buildAnalysisPrompt(url, analysisResults, searchConsoleData, detailedContent);
+      const prompt = this.buildAnalysisPrompt(url, analysisResults, searchConsoleData, detailedContent, competitiveAnalysis);
       const result = await this.generativeModel.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
@@ -127,7 +128,7 @@ class GeminiAIService {
    * @param {Object} detailedContent - 詳細ページコンテンツ（オプション）
    * @returns {string} プロンプト
    */
-  buildAnalysisPrompt(url, analysisResults, searchConsoleData = null, detailedContent = null) {
+  buildAnalysisPrompt(url, analysisResults, searchConsoleData = null, detailedContent = null, competitiveAnalysis = null) {
     const scores = {
       seo: analysisResults.seo?.score || 0,
       performance: analysisResults.performance?.score || 0,
@@ -167,6 +168,9 @@ ${this.formatSearchConsoleData(searchConsoleData)}
 
 📄 【ページの実際のコンテンツ】
 ${this.formatDetailedContent(detailedContent)}
+
+🏆 【実際の競合分析データ】
+${this.formatCompetitiveAnalysis(competitiveAnalysis)}
 
 🧠 【AI分析指示】
 以下の高度な分析視点で深掘りしてください：
@@ -462,6 +466,70 @@ ${this.formatDetailedContent(detailedContent)}
     }
 
     output += `\n抽出日時: ${detailedContent.extractedAt}\n`;
+
+    return output;
+  }
+
+  /**
+   * 競合分析データをフォーマット
+   */
+  formatCompetitiveAnalysis(competitiveAnalysis) {
+    if (!competitiveAnalysis) {
+      return '競合分析データが利用できません。推定データで分析を実行します。';
+    }
+
+    let output = `【実際の競合分析結果】\n`;
+    output += `データソース: ${competitiveAnalysis.dataSource}\n\n`;
+
+    // ターゲットキーワード
+    if (competitiveAnalysis.targetKeywords) {
+      output += `【ターゲットキーワード】\n`;
+      output += `- 主要キーワード: "${competitiveAnalysis.targetKeywords.primary}"\n`;
+      if (competitiveAnalysis.targetKeywords.secondary?.length > 0) {
+        output += `- 関連キーワード: ${competitiveAnalysis.targetKeywords.secondary.join(', ')}\n`;
+      }
+      if (competitiveAnalysis.targetKeywords.longtail?.length > 0) {
+        output += `- ロングテール: ${competitiveAnalysis.targetKeywords.longtail.join(', ')}\n`;
+      }
+      output += `\n`;
+    }
+
+    // 競合サイト
+    if (competitiveAnalysis.topCompetitors && competitiveAnalysis.topCompetitors.length > 0) {
+      output += `【検索結果上位の競合サイト】\n`;
+      competitiveAnalysis.topCompetitors.slice(0, 5).forEach((competitor, index) => {
+        output += `${index + 1}. ${competitor.domain} (${competitor.position}位)\n`;
+        if (competitor.title) {
+          output += `   タイトル: "${competitor.title}"\n`;
+        }
+      });
+      output += `\n`;
+    }
+
+    // 競合の強み
+    if (competitiveAnalysis.competitorStrengths && competitiveAnalysis.competitorStrengths.length > 0) {
+      output += `【競合の共通する強み】\n`;
+      competitiveAnalysis.competitorStrengths.forEach(strength => {
+        output += `- ${strength}\n`;
+      });
+      output += `\n`;
+    }
+
+    // 市場ポジション
+    if (competitiveAnalysis.marketPosition) {
+      output += `【現在の市場ポジション】\n`;
+      output += `順位: ${competitiveAnalysis.marketPosition.position || '不明'}\n`;
+      output += `評価: ${competitiveAnalysis.marketPosition.description || '分析中'}\n`;
+      output += `競合レベル: ${competitiveAnalysis.marketPosition.competitiveLevel || 'unknown'}\n\n`;
+    }
+
+    // 差別化機会
+    if (competitiveAnalysis.differentiationOpportunities && competitiveAnalysis.differentiationOpportunities.length > 0) {
+      output += `【特定された差別化機会】\n`;
+      competitiveAnalysis.differentiationOpportunities.forEach((opportunity, index) => {
+        output += `${index + 1}. ${opportunity}\n`;
+      });
+    }
 
     return output;
   }

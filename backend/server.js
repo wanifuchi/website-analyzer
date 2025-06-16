@@ -13,6 +13,9 @@ const GeminiAIService = require('./gemini-service');
 // Search Console サービス
 const SearchConsoleService = require('./search-console-service');
 
+// 競合分析サービス
+const CompetitiveAnalysisService = require('./competitive-analysis-service');
+
 const app = express();
 const PORT = process.env.PORT || 3002;
 // Railway強制再デプロイ: 2025-01-13T20:31:00Z
@@ -28,6 +31,9 @@ const geminiService = new GeminiAIService();
 
 // Search Console サービス初期化
 const searchConsoleService = new SearchConsoleService();
+
+// 競合分析サービス初期化
+const competitiveAnalysisService = new CompetitiveAnalysisService();
 
 // 詳細ページコンテンツ抽出関数
 async function extractDetailedPageContent(url) {
@@ -304,10 +310,10 @@ async function generateAIRecommendations(url, analysisResults) {
   console.log('🤖 AI推奨事項生成開始:', url);
   
   try {
-    // 詳細コンテンツ抽出とSearch Consoleデータ取得を並列実行
+    // 詳細コンテンツ抽出、Search Consoleデータ取得、競合分析を並列実行
     console.log('🚀 並列データ取得開始:', url);
     
-    const [detailedContentResult, searchConsoleResult] = await Promise.allSettled([
+    const [detailedContentResult, searchConsoleResult, competitiveAnalysisResult] = await Promise.allSettled([
       // 詳細コンテンツ抽出（タイムアウト対策付き）
       extractDetailedPageContent(url).catch(error => {
         console.warn('⚠️ 詳細コンテンツ抽出エラー:', error.message);
@@ -326,29 +332,56 @@ async function generateAIRecommendations(url, analysisResults) {
       searchConsoleService.getSearchPerformance(url).catch(error => {
         console.warn('⚠️ Search Console エラー:', error.message);
         return null;
-      })
+      }),
+      
+      // 競合分析実行
+      (async () => {
+        try {
+          const tempContent = await extractDetailedPageContent(url).catch(() => ({
+            title: '', textContent: '', properNouns: [], businessContext: { primaryIndustry: '不明' }
+          }));
+          return await competitiveAnalysisService.analyzeCompetitors(url, tempContent);
+        } catch (error) {
+          console.warn('⚠️ 競合分析エラー:', error.message);
+          return null;
+        }
+      })()
     ]);
     
     // 結果を取得
     const detailedContent = detailedContentResult.status === 'fulfilled' ? detailedContentResult.value : null;
     const searchConsoleData = searchConsoleResult.status === 'fulfilled' ? searchConsoleResult.value : null;
+    const competitiveAnalysis = competitiveAnalysisResult.status === 'fulfilled' ? competitiveAnalysisResult.value : null;
     
     console.log('✅ 並列データ取得完了:', {
       hasDetailedContent: !!detailedContent && !detailedContent.error,
       hasSearchConsoleData: !!searchConsoleData,
+      hasCompetitiveAnalysis: !!competitiveAnalysis,
       contentError: detailedContent?.error,
       titleLength: detailedContent?.title?.length || 0,
-      contentLength: detailedContent?.textContent?.length || 0
+      contentLength: detailedContent?.textContent?.length || 0,
+      competitorsFound: competitiveAnalysis?.topCompetitors?.length || 0
     });
 
-    // Gemini AI サービスを使用して推奨事項を生成（詳細コンテンツとSearch Consoleデータも含む）
-    const recommendations = await geminiService.generateWebsiteRecommendations(url, analysisResults, searchConsoleData, detailedContent);
+    // Gemini AI サービスを使用して推奨事項を生成（すべてのデータを含む）
+    const recommendations = await geminiService.generateWebsiteRecommendations(url, analysisResults, searchConsoleData, detailedContent, competitiveAnalysis);
     
     console.log('✅ AI推奨事項生成完了:', {
       provider: recommendations.aiProvider,
       recommendationCount: recommendations.recommendations?.length || 0,
       summary: recommendations.summary?.substring(0, 100) + '...'
     });
+    
+    // 競合分析データをレスポンスに追加
+    if (competitiveAnalysis) {
+      recommendations.competitiveAnalysis = {
+        topCompetitors: competitiveAnalysis.topCompetitors?.map(c => c.domain) || [],
+        competitorStrengths: competitiveAnalysis.competitorStrengths || [],
+        differentiationOpportunities: competitiveAnalysis.differentiationOpportunities || [],
+        marketPosition: competitiveAnalysis.marketPosition?.description || '分析中',
+        dataSource: competitiveAnalysis.dataSource
+      };
+    }
     
     return recommendations;
 
