@@ -101,7 +101,14 @@ cd frontend && npm install
 
 より高度な分析機能を利用するには、以下のAPIキーの設定が必要です：
 
-#### 1. **Google PageSpeed Insights API**（必須）
+#### 1. **Google Gemini AI API**（必須 - 本番設定済み）
+- **用途**: AI深層分析、改善提案生成
+- **取得方法**:
+  1. [Google AI Studio](https://makersuite.google.com/app/apikey)でAPIキー取得
+  2. Gemini 2.0 Flash Experimental モデルを選択
+- **設定**: `GEMINI_API_KEY`
+
+#### 2. **Google PageSpeed Insights API**（必須 - 本番設定済み）
 - **用途**: Core Web Vitals、パフォーマンス分析
 - **取得方法**:
   1. [Google Cloud Console](https://console.cloud.google.com)でプロジェクト作成
@@ -109,25 +116,7 @@ cd frontend && npm install
   3. APIキーを作成
 - **設定**: `GOOGLE_PAGESPEED_API_KEY`
 
-#### 2. **Google Gemini AI API**（必須）
-- **用途**: AI深層分析、改善提案生成
-- **取得方法**:
-  1. [Google AI Studio](https://makersuite.google.com/app/apikey)でAPIキー取得
-  2. Gemini 2.0 Flash Experimental モデルを選択
-- **設定**: `GEMINI_API_KEY`
-
-#### 3. **Google Search Console API**（推奨）
-- **用途**: 実際の検索パフォーマンスデータ取得
-- **取得方法**:
-  1. Google Cloud Console で Search Console API を有効化
-  2. OAuth 2.0 クライアント ID を作成
-  3. リダイレクトURIを設定
-- **設定**: 
-  - `GOOGLE_CLIENT_ID`
-  - `GOOGLE_CLIENT_SECRET`
-  - `GOOGLE_REDIRECT_URI`
-
-#### 4. **Google Custom Search API**（推奨）
+#### 3. **Google Custom Search API**（本番設定済み）
 - **用途**: 競合分析、SERP分析、実際の検索結果データ取得
 - **取得方法**:
   1. Google Cloud Console で Custom Search API を有効化
@@ -138,6 +127,17 @@ cd frontend && npm install
   - `GOOGLE_API_KEY`
   - `GOOGLE_SEARCH_ENGINE_ID`
 
+#### 4. **Google Search Console API**（オプション）
+- **用途**: 実際の検索パフォーマンスデータ取得
+- **現在の状況**: モックデータで代替動作中
+- **取得方法**:
+  1. Google Cloud Console で Search Console API を有効化
+  2. サービスアカウントを作成
+  3. JSONキーファイルをダウンロード
+- **設定**: 
+  - `GOOGLE_SERVICE_ACCOUNT_KEY` (JSON文字列)
+  - または `GOOGLE_APPLICATION_CREDENTIALS` (ファイルパス)
+
 ### 環境変数の設定
 ```bash
 # backend/.env ファイルを作成
@@ -147,18 +147,23 @@ cp backend/.env.example backend/.env
 vim backend/.env
 ```
 
-### 🎯 API未設定時の動作
+### 🎯 現在の本番環境状況
+
+**✅ 設定済みAPI（フル機能利用可能）:**
+- **GEMINI_API_KEY**: AI深層分析・改善提案
+- **GOOGLE_PAGESPEED_API_KEY**: Core Web Vitals実測値
+- **GOOGLE_API_KEY**: 競合分析・SERP分析の実データ
+- **GOOGLE_SEARCH_ENGINE_ID**: 検索結果データ取得
+
+**⚠️ 未設定API（代替機能で動作）:**
+- **Search Console API**: モックデータで検索パフォーマンス表示
+
+### API未設定時の動作
 APIキーが設定されていない場合でも、以下の機能は利用可能です：
 - 基本的なサイト分析（HTML構造、メタタグ等）
 - レスポンシブデザインチェック
 - 基本的なSEO分析
-- モックデータによるデモ表示
-
-ただし、以下の機能は制限されます：
-- **PageSpeed API未設定**: Core Web Vitalsの実測値が取得できません
-- **Gemini API未設定**: AI深層分析・改善提案が簡易版になります
-- **Search Console API未設定**: 実際の検索パフォーマンスデータが表示されません
-- **Custom Search API未設定**: 競合分析・SERP分析が推定データになります
+- フォールバックデータによる分析表示
 
 ## 📊 使用方法
 
