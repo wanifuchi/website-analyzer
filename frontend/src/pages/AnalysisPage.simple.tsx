@@ -1918,6 +1918,204 @@ const AnalysisPage: React.FC = () => {
                 </div>
               )}
 
+              {/* 検索意図分析 */}
+              {aiRecommendations.searchIntentAnalysis && (
+                <div className="bg-gradient-to-r from-violet-100 to-purple-100 rounded-xl p-6 border border-violet-300">
+                  <h4 className="font-bold text-violet-900 mb-4 flex items-center">
+                    <span className="mr-2">🎯</span>
+                    検索意図分析（Search Intent Analysis）
+                    <button
+                      onClick={() => {
+                        setSelectedRecommendation({
+                          title: '検索意図分析',
+                          category: 'SEO最適化',
+                          ...aiRecommendations.searchIntentAnalysis
+                        });
+                        setShowChatbot(true);
+                      }}
+                      className="ml-auto bg-violet-500 hover:bg-violet-600 text-white px-3 py-1 rounded-lg text-sm transition-colors"
+                    >
+                      💬 詳しく聞く
+                    </button>
+                  </h4>
+                  
+                  {/* 全体的なマッチング度 */}
+                  {aiRecommendations.searchIntentAnalysis.overallIntentMatch && (
+                    <div className="mb-6 bg-white p-4 rounded-lg border border-violet-200">
+                      <h5 className="font-semibold text-violet-800 mb-2">📊 全体的な検索意図マッチング度</h5>
+                      <div className="flex items-center">
+                        <div className="w-full bg-gray-200 rounded-full h-3 mr-4">
+                          <div 
+                            className="bg-gradient-to-r from-violet-500 to-purple-500 h-3 rounded-full transition-all duration-300"
+                            style={{ width: aiRecommendations.searchIntentAnalysis.overallIntentMatch }}
+                          ></div>
+                        </div>
+                        <span className="text-2xl font-bold text-violet-600">
+                          {aiRecommendations.searchIntentAnalysis.overallIntentMatch}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 検索意図タイプ別分析 */}
+                  {aiRecommendations.searchIntentAnalysis.detectedIntents && (
+                    <div className="mb-6">
+                      <h5 className="font-semibold text-violet-800 mb-4">🔍 検索意図タイプ別分析</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {aiRecommendations.searchIntentAnalysis.detectedIntents.map((intent: any, index: number) => (
+                          <div key={index} className="bg-white p-4 rounded-lg border border-violet-200">
+                            <div className="flex items-center justify-between mb-3">
+                              <h6 className="font-medium text-violet-900">
+                                {intent.intent === 'informational' ? '📚 情報収集型' :
+                                 intent.intent === 'commercial' ? '🛒 商用調査型' :
+                                 intent.intent === 'transactional' ? '💳 取引型' :
+                                 intent.intent === 'navigational' ? '🧭 指名検索型' : intent.intent}
+                              </h6>
+                              <span className="text-lg font-bold text-violet-600">{intent.percentage}%</span>
+                            </div>
+                            
+                            {/* 最適化レベル */}
+                            <div className="mb-3">
+                              <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                                intent.optimizationLevel === 'high' ? 'bg-green-100 text-green-700' :
+                                intent.optimizationLevel === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-red-100 text-red-700'
+                              }`}>
+                                最適化レベル: {intent.optimizationLevel === 'high' ? '高' : intent.optimizationLevel === 'medium' ? '中' : '低'}
+                              </span>
+                            </div>
+
+                            {/* キーワード例 */}
+                            {intent.keywords && intent.keywords.length > 0 && (
+                              <div className="mb-3">
+                                <h7 className="text-sm font-medium text-gray-700 mb-1 block">代表キーワード:</h7>
+                                <div className="flex flex-wrap gap-1">
+                                  {intent.keywords.slice(0, 3).map((keyword: string, kidx: number) => (
+                                    <span key={kidx} className="bg-violet-50 text-violet-700 px-2 py-1 rounded text-xs">
+                                      {keyword}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 推奨事項 */}
+                            {intent.recommendations && intent.recommendations.length > 0 && (
+                              <div>
+                                <h7 className="text-sm font-medium text-gray-700 mb-1 block">推奨事項:</h7>
+                                <ul className="text-xs text-gray-600 space-y-1">
+                                  {intent.recommendations.slice(0, 2).map((rec: string, ridx: number) => (
+                                    <li key={ridx} className="flex items-start">
+                                      <span className="mr-1 text-violet-500">•</span>
+                                      {rec}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ユーザージャーニーマッピング */}
+                  {aiRecommendations.searchIntentAnalysis.userJourneyMapping && (
+                    <div className="mb-6">
+                      <h5 className="font-semibold text-violet-800 mb-3">🗺️ ユーザージャーニー × 検索意図マッピング</h5>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {Object.entries(aiRecommendations.searchIntentAnalysis.userJourneyMapping).map(([stage, value]: [string, any]) => (
+                          <div key={stage} className="bg-white p-3 rounded-lg border border-violet-200 text-center">
+                            <div className="text-sm text-gray-600 mb-1">
+                              {stage === 'awareness' ? '認知' :
+                               stage === 'consideration' ? '検討' :
+                               stage === 'decision' ? '決定' :
+                               stage === 'retention' ? '継続' : stage}
+                            </div>
+                            <div className="font-bold text-violet-600">{value}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 優先アクション */}
+                  {aiRecommendations.searchIntentAnalysis.priorityActions && aiRecommendations.searchIntentAnalysis.priorityActions.length > 0 && (
+                    <div className="mb-6">
+                      <h5 className="font-semibold text-violet-800 mb-3">⚡ 優先実装アクション</h5>
+                      <div className="space-y-3">
+                        {aiRecommendations.searchIntentAnalysis.priorityActions.map((action: any, index: number) => (
+                          <div key={index} className="bg-white p-4 rounded-lg border border-violet-200">
+                            <div className="flex items-start justify-between mb-2">
+                              <h6 className="font-medium text-violet-900">{action.intent} 最適化</h6>
+                              <span className="text-xs text-gray-500">{action.timeframe}</span>
+                            </div>
+                            <p className="text-sm text-gray-700 mb-2">{action.action}</p>
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-green-600 font-medium">期待効果: {action.expectedImpact}</span>
+                              <span className="text-blue-600">実装: {action.implementation}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* コンテンツギャップ（検索意図別） */}
+                  {aiRecommendations.searchIntentAnalysis.contentGapsByIntent && (
+                    <div className="mb-6">
+                      <h5 className="font-semibold text-violet-800 mb-3">📝 検索意図別コンテンツ不足領域</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {Object.entries(aiRecommendations.searchIntentAnalysis.contentGapsByIntent).map(([intent, gaps]: [string, any]) => (
+                          <div key={intent} className="bg-white p-4 rounded-lg border border-violet-200">
+                            <h6 className="font-medium text-violet-900 mb-2">
+                              {intent === 'informational' ? '📚 情報収集型' :
+                               intent === 'commercial' ? '🛒 商用調査型' :
+                               intent === 'transactional' ? '💳 取引型' :
+                               intent === 'navigational' ? '🧭 指名検索型' : intent}
+                            </h6>
+                            {Array.isArray(gaps) && gaps.length > 0 && (
+                              <ul className="text-sm text-gray-600 space-y-1">
+                                {gaps.map((gap: string, idx: number) => (
+                                  <li key={idx} className="flex items-start">
+                                    <span className="mr-2 text-violet-500">•</span>
+                                    {gap}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 音声検索・季節性分析 */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {aiRecommendations.searchIntentAnalysis.voiceSearchOptimization && (
+                      <div className="bg-gradient-to-r from-violet-50 to-purple-50 p-4 rounded-lg border border-violet-200">
+                        <h5 className="font-semibold text-violet-800 mb-2">🎤 音声検索最適化</h5>
+                        <p className="text-sm text-gray-700">{aiRecommendations.searchIntentAnalysis.voiceSearchOptimization}</p>
+                      </div>
+                    )}
+                    {aiRecommendations.searchIntentAnalysis.seasonalTrends && (
+                      <div className="bg-gradient-to-r from-purple-50 to-violet-50 p-4 rounded-lg border border-purple-200">
+                        <h5 className="font-semibold text-purple-800 mb-2">📅 季節性・トレンド分析</h5>
+                        <p className="text-sm text-gray-700">{aiRecommendations.searchIntentAnalysis.seasonalTrends}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 検索意図別コンテンツ戦略 */}
+                  {aiRecommendations.searchIntentAnalysis.intentBasedContentStrategy && (
+                    <div className="mt-6 bg-gradient-to-r from-violet-50 to-purple-50 p-4 rounded-lg border border-violet-200">
+                      <h5 className="font-semibold text-violet-800 mb-2">🎯 検索意図別コンテンツ戦略</h5>
+                      <p className="text-gray-700">{aiRecommendations.searchIntentAnalysis.intentBasedContentStrategy}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* 技術イノベーション提案 */}
               {aiRecommendations.technicalInnovation && (
                 <div className="bg-gradient-to-r from-indigo-100 to-purple-100 rounded-xl p-6 border border-indigo-300">
