@@ -356,14 +356,44 @@ async function generateAIRecommendations(url, analysisResults) {
       // SERP分析実行
       (async () => {
         try {
-          // 競合分析からキーワードを取得
+          // より効果的なキーワード抽出
           const tempContent = await extractDetailedPageContent(url).catch(() => ({
             title: '', textContent: '', properNouns: []
           }));
           const keywords = [];
+          
           if (tempContent.title) {
-            keywords.push(tempContent.title.replace(/[｜|\-\s].*/g, '').trim());
+            // メインタイトルの追加
+            const mainTitle = tempContent.title.replace(/[｜|\-\s].*/g, '').trim();
+            if (mainTitle && mainTitle.length > 2) keywords.push(mainTitle);
+            
+            // サイト名を含む完全なタイトル
+            const fullTitle = tempContent.title.trim();
+            if (fullTitle && fullTitle !== mainTitle && fullTitle.length <= 60) {
+              keywords.push(fullTitle);
+            }
           }
+          
+          // 固有名詞・ブランド名を追加
+          if (tempContent.properNouns && tempContent.properNouns.length > 0) {
+            keywords.push(...tempContent.properNouns.slice(0, 2));
+          }
+          
+          // ドメイン名ベースのフォールバック
+          if (keywords.length === 0) {
+            const domain = new URL(url).hostname.replace('www.', '');
+            const domainKeyword = domain.split('.')[0];
+            if (domainKeyword.length > 2) {
+              keywords.push(domainKeyword);
+            }
+          }
+          
+          // 業界・サービス関連キーワードの追加
+          if (tempContent.businessContext?.primaryIndustry) {
+            keywords.push(tempContent.businessContext.primaryIndustry);
+          }
+          
+          console.log('🔍 SERP分析用キーワード:', keywords);
           return await serpAnalysisService.analyzeSerpFeatures(url, keywords);
         } catch (error) {
           console.warn('⚠️ SERP分析エラー:', error.message);
@@ -417,6 +447,14 @@ async function generateAIRecommendations(url, analysisResults) {
         recommendations: serpAnalysis.recommendations,
         dataSource: serpAnalysis.dataSource
       };
+      console.log('✅ SERP分析データをレスポンスに追加:', {
+        hasAnalysis: true,
+        analyzedKeywords: serpAnalysis.summary?.analyzedKeywords || 0,
+        recommendationsCount: serpAnalysis.recommendations?.length || 0,
+        dataSource: serpAnalysis.dataSource
+      });
+    } else {
+      console.log('⚠️ SERP分析データなし - レスポンスに含まれません');
     }
     
     return recommendations;

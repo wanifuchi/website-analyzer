@@ -23,9 +23,18 @@ class SerpAnalysisService {
    * @returns {Promise<Object>} SERP分析結果
    */
   async analyzeSerpFeatures(url, keywords) {
-    console.log('🔍 SERP分析開始:', { url, keywordCount: keywords.length });
+    console.log('🔍 SERP分析開始:', { url, keywordCount: keywords.length, keywords: keywords.slice(0, 3) });
     
-    if (!this.isAvailable || !keywords || keywords.length === 0) {
+    if (!this.isAvailable) {
+      console.log('⚠️ SERP分析API利用不可:', { 
+        hasApiKey: !!this.googleApiKey,
+        hasSearchEngineId: !!this.googleSearchEngineId 
+      });
+      return this.getFallbackAnalysis();
+    }
+    
+    if (!keywords || keywords.length === 0) {
+      console.log('⚠️ SERP分析キーワードなし');
       return this.getFallbackAnalysis();
     }
     
@@ -43,12 +52,49 @@ class SerpAnalysisService {
       // 総合分析
       const aggregatedAnalysis = this.aggregateSerpAnalysis(results);
       
-      return {
+      // 推奨事項の生成（空の場合は基本的な推奨事項を追加）
+      let recommendations = this.generateSerpRecommendations(aggregatedAnalysis);
+      
+      // 推奨事項が少ない場合は基本的な最適化提案を追加
+      if (recommendations.length < 2) {
+        recommendations.push({
+          title: '基本的なSERP最適化',
+          priority: 'medium',
+          description: 'SERP分析によるデータ駆動な最適化で検索結果の表示を改善',
+          implementation: [
+            'タイトルタグの最適化（32文字以内推奨）',
+            'メタディスクリプションの改善（120-160文字）',
+            '構造化データ（JSON-LD）の実装',
+            'ページの読み込み速度向上'
+          ]
+        });
+      }
+      
+      // 機会分析が少ない場合は基本的な機会を追加
+      if (aggregatedAnalysis.topOpportunities.length === 0) {
+        aggregatedAnalysis.topOpportunities.push({
+          type: 'meta_optimization',
+          priority: 'high',
+          description: 'メタタグ最適化でクリック率向上',
+          action: 'より魅力的なタイトルとディスクリプションの作成'
+        });
+      }
+      
+      const finalResult = {
         keywords: results,
         summary: aggregatedAnalysis,
-        recommendations: this.generateSerpRecommendations(aggregatedAnalysis),
+        recommendations: recommendations,
         dataSource: 'Google Search API'
       };
+      
+      console.log('✅ SERP分析完了:', {
+        url,
+        analyzedKeywords: finalResult.summary.analyzedKeywords,
+        recommendationsCount: finalResult.recommendations.length,
+        hasOpportunities: finalResult.summary.topOpportunities.length > 0
+      });
+      
+      return finalResult;
       
     } catch (error) {
       console.error('❌ SERP分析エラー:', error.message);
