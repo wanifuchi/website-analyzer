@@ -58,7 +58,7 @@ class GeminiAIService {
         // 方法1: 直接JSON解析
         const directJson = JSON.parse(cleanedText);
         console.log('✅ 直接JSON解析成功');
-        return this.formatRecommendations(directJson, url, searchConsoleData, detailedContent);
+        return this.formatRecommendations(directJson, url, searchConsoleData, detailedContent, analysisResults);
       } catch (directError) {
         console.log('⚠️ 直接JSON解析失敗:', directError.message);
         
@@ -74,7 +74,7 @@ class GeminiAIService {
             
             const recommendations = JSON.parse(jsonString);
             console.log('✅ JSON抽出解析成功');
-            return this.formatRecommendations(recommendations, url, searchConsoleData, detailedContent);
+            return this.formatRecommendations(recommendations, url, searchConsoleData, detailedContent, analysisResults);
           }
         } catch (parseError) {
           console.warn('⚠️ JSON抽出解析失敗:', parseError.message);
@@ -87,7 +87,7 @@ class GeminiAIService {
             console.log('🔍 コードブロック内JSON:', codeBlockMatch[1].substring(0, 300) + '...');
             const recommendations = JSON.parse(codeBlockMatch[1]);
             console.log('✅ コードブロック解析成功');
-            return this.formatRecommendations(recommendations, url, searchConsoleData, detailedContent);
+            return this.formatRecommendations(recommendations, url, searchConsoleData, detailedContent, analysisResults);
           }
         } catch (codeBlockError) {
           console.warn('⚠️ コードブロック解析失敗:', codeBlockError.message);
@@ -103,7 +103,7 @@ class GeminiAIService {
             
             const recommendations = JSON.parse(longestJson);
             console.log('✅ 最長JSON解析成功');
-            return this.formatRecommendations(recommendations, url, searchConsoleData, detailedContent);
+            return this.formatRecommendations(recommendations, url, searchConsoleData, detailedContent, analysisResults);
           }
         } catch (longestError) {
           console.warn('⚠️ 最長JSON解析失敗:', longestError.message);
@@ -206,6 +206,13 @@ ${this.formatCompetitiveAnalysis(competitiveAnalysis)}
    - モバイルファーストインデックスへの完全対応
    - サイト構造とクロール効率の最適化
 
+6. **ユーザージャーニー最適化（必須・詳細実装）**
+   - 実際のパフォーマンススコア（${Math.round((analysisResults.seo?.score || 75) + (analysisResults.performance?.score || 70) + (analysisResults.mobile?.score || 80))/3}点）から具体的痛点を特定
+   - 業界「${detailedContent?.businessContext?.primaryIndustry || industryHint}」特化型のユーザーペルソナ設計
+   - 5段階コンバージョンファネル（認知→関心→検討→決定→行動）の課題と改善策
+   - 感情的ニーズと認知的負荷を考慮した最適化フロー設計
+   - 実装優先度付けと具体的期待効果の数値化
+
 🎯 【重要】以下の形式で**必ず有効なJSON形式のみ**で応答してください（説明文は一切含めないでください）：
 
 {
@@ -260,9 +267,65 @@ ${this.formatCompetitiveAnalysis(competitiveAnalysis)}
     }
   ],
   "userJourneyOptimization": {
-    "currentPainPoints": ["現在の課題点"],
-    "optimizedFlow": "改善されたユーザーフロー",
-    "conversionStrategy": "コンバージョン向上戦略"
+    "currentPainPoints": [
+      {
+        "category": "カテゴリ名",
+        "issue": "具体的な問題の詳細説明",
+        "impact": "high|medium|low",
+        "details": "技術的根拠と数値データ"
+      }
+    ],
+    "userPersonas": [
+      {
+        "type": "ペルソナタイプ",
+        "characteristics": ["特徴1", "特徴2"],
+        "motivations": ["動機1", "動機2"],
+        "behaviors": ["行動1", "行動2"]
+      }
+    ],
+    "conversionFunnel": {
+      "awareness": {
+        "stage": "認知",
+        "issues": ["課題1"],
+        "improvements": ["改善策1"]
+      },
+      "interest": {
+        "stage": "関心",
+        "issues": ["課題1"],
+        "improvements": ["改善策1"]
+      },
+      "consideration": {
+        "stage": "検討",
+        "issues": ["課題1"],
+        "improvements": ["改善策1"]
+      },
+      "decision": {
+        "stage": "決定",
+        "issues": ["課題1"],
+        "improvements": ["改善策1"]
+      },
+      "action": {
+        "stage": "行動",
+        "issues": ["課題1"],
+        "improvements": ["改善策1"]
+      }
+    },
+    "optimizedFlow": "段階的な最適化フロー詳細（500文字以上）",
+    "conversionStrategy": "データ基づく包括的戦略（400文字以上）",
+    "implementationPriority": [
+      {
+        "priority": 1,
+        "category": "カテゴリ",
+        "timeline": "期間",
+        "expectedImpact": "効果"
+      }
+    ],
+    "expectedImpact": {
+      "bounceRateReduction": "数値%",
+      "conversionRateIncrease": "数値%",
+      "userSatisfactionIncrease": "数値%",
+      "timeToConversion": "具体的改善内容"
+    }
   },
   "technicalInnovation": {
     "modernTechStack": ["推奨技術スタック"],
@@ -307,12 +370,23 @@ ${this.formatCompetitiveAnalysis(competitiveAnalysis)}
 💡 このサイトが業界トップレベルになるための革新的戦略を、上記の文字数基準を厳密に守って詳細に提案してください。
 特に deepAnalysis, solution, implementation, businessImpact の4項目は指定文字数範囲で具体的かつ実装可能な内容にしてください。
 
+🎯 【ユーザージャーニー最適化に関する特別指示】
+userJourneyOptimization は**必須項目**です。以下を必ず含めてください：
+- currentPainPoints: 最低3個以上の具体的痛点（オブジェクト形式で impact レベル付き）
+- userPersonas: 業界に特化した最低2個のペルソナ
+- conversionFunnel: 5段階すべての詳細分析
+- optimizedFlow: 500文字以上の詳細フロー設計
+- conversionStrategy: 400文字以上の包括的戦略
+- implementationPriority: 優先順位付きの実装計画
+- expectedImpact: 具体的数値での効果予測
+
 ⚠️ 【応答形式の厳密な指示】
 1. 応答は**純粋なJSON形式のみ**にしてください
 2. JSON以外の説明文、前置き、後書きは一切含めないでください
 3. 文字列内での改行は\\nを使用してください
 4. ダブルクォートのエスケープは\\"を使用してください
 5. 応答の最初の文字は必ず「{」で、最後の文字は必ず「}」にしてください
+6. userJourneyOptimization が空や不完全な場合、分析を再実行してください
 `;
   }
 
@@ -822,13 +896,53 @@ ${this.formatCompetitiveAnalysis(competitiveAnalysis)}
    * @param {string} url - URL
    * @returns {Object} フォーマットされた推奨事項
    */
-  formatRecommendations(recommendations, url, searchConsoleData = null, detailedContent = null) {
+  formatRecommendations(recommendations, url, searchConsoleData = null, detailedContent = null, analysisResults = null) {
+    console.log('🔧 formatRecommendations呼び出し:', {
+      hasUserJourney: !!recommendations.userJourneyOptimization,
+      userJourneyType: typeof recommendations.userJourneyOptimization,
+      userJourneyKeys: recommendations.userJourneyOptimization ? Object.keys(recommendations.userJourneyOptimization) : []
+    });
+
     const result = {
       ...recommendations,
       analysisDate: new Date().toISOString(),
       url,
       aiProvider: 'Gemini AI (詳細コンテンツ分析)'
     };
+
+    // ユーザージャーニー最適化データをチェック・強化
+    if (!result.userJourneyOptimization || 
+        !result.userJourneyOptimization.currentPainPoints ||
+        (Array.isArray(result.userJourneyOptimization.currentPainPoints) && 
+         result.userJourneyOptimization.currentPainPoints.length === 0) ||
+        (typeof result.userJourneyOptimization.currentPainPoints[0] === 'string' && 
+         result.userJourneyOptimization.currentPainPoints.length <= 3)) {
+      
+      console.log('🎯 ユーザージャーニー最適化データが不十分です。詳細分析を実行します。');
+      
+      // analysisResultsが渡されていない場合は基本的な分析結果を構築
+      const fallbackAnalysisResults = analysisResults || {
+        seo: { score: 75 },
+        performance: { score: 70 },
+        mobile: { score: 80 },
+        accessibility: { score: 85 },
+        security: { score: 90 }
+      };
+      
+      // 詳細なユーザージャーニー分析を実行
+      result.userJourneyOptimization = this.generateUserJourneyAnalysis(
+        url, 
+        fallbackAnalysisResults, 
+        searchConsoleData, 
+        detailedContent
+      );
+      
+      console.log('✅ 詳細なユーザージャーニー最適化データを生成しました:', {
+        painPointsCount: result.userJourneyOptimization.currentPainPoints?.length || 0,
+        hasPersonas: !!result.userJourneyOptimization.userPersonas,
+        hasConversionFunnel: !!result.userJourneyOptimization.conversionFunnel
+      });
+    }
 
     // Search Console データがある場合は結果に含める
     if (searchConsoleData) {
@@ -895,6 +1009,7 @@ ${this.formatCompetitiveAnalysis(competitiveAnalysis)}
     return {
       summary: `基本的な分析により${recommendations.length}個の改善提案を生成しました。Gemini API設定により、より詳細な分析が可能になります。`,
       recommendations,
+      userJourneyOptimization: this.generateUserJourneyAnalysis(url, analysisResults, null, null),
       expectedImpact: {
         seo: Math.min(15, Math.max(0, 85 - scores.seo)),
         performance: Math.min(20, Math.max(0, 80 - scores.performance)),
